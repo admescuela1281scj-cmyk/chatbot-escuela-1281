@@ -9,14 +9,27 @@ var TelegramBot = require('node-telegram-bot-api');
 var app = express();
 var PORT = process.env.PORT || 3000;
 
-var CONFIG = {
-  SPREADSHEET_ID: process.env.SPREADSHEET_ID,
-  SHEET_NAME: process.env.SHEET_NAME || 'certificado medico',
-  FOLDER_ID: process.env.FOLDER_ID,
-  TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
-  TELEGRAM_CHAT_ID: process.env.TELEGRAM_CHAT_ID,
-  MAX_FILE_SIZE: 10 * 1024 * 1024,
-};
+var auth = null;
+try {
+  if (process.env.GOOGLE_CREDENTIALS_JSON) {
+    var creds = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
+    auth = new google.auth.GoogleAuth({
+      credentials: creds,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.file'],
+    });
+    console.log('Google Auth desde variable de entorno OK');
+  } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    auth = new google.auth.GoogleAuth({
+      keyFile: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.file'],
+    });
+    console.log('Google Auth desde archivo OK');
+  } else {
+    console.log('Google Auth NO configurado');
+  }
+} catch (e) {
+  console.log('Error Google Auth:', e.message);
+}
 
 var GRADES = [
   'Pre-Jardín', 'Jardín', 'Preparatoria',
