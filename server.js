@@ -9,6 +9,25 @@ var TelegramBot = require('node-telegram-bot-api');
 var app = express();
 var PORT = process.env.PORT || 3000;
 
+var CONFIG = {
+  SPREADSHEET_ID: process.env.SPREADSHEET_ID,
+  SHEET_NAME: process.env.SHEET_NAME || 'certificado medico',
+  FOLDER_ID: process.env.FOLDER_ID,
+  TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
+  TELEGRAM_CHAT_ID: process.env.TELEGRAM_CHAT_ID,
+  MAX_FILE_SIZE: 10 * 1024 * 1024,
+};
+
+var GRADES = [
+  'Pre-Jardín', 'Jardín', 'Preparatoria',
+  '1er Grado', '2do Grado', '3er Grado',
+  '4to Grado', '5to Grado', '6to Grado',
+  '7mo Grado', '8vo Grado', '9no Grado'
+];
+
+var SHIFTS = ['Mañana', 'Tarde'];
+var SECTIONS = ['A', 'B'];
+
 var auth = null;
 try {
   if (process.env.GOOGLE_CREDENTIALS_JSON) {
@@ -31,36 +50,8 @@ try {
   console.log('Error Google Auth:', e.message);
 }
 
-var GRADES = [
-  'Pre-Jardín', 'Jardín', 'Preparatoria',
-  '1er Grado', '2do Grado', '3er Grado',
-  '4to Grado', '5to Grado', '6to Grado',
-  '7mo Grado', '8vo Grado', '9no Grado'
-];
-
-var SHIFTS = ['Mañana', 'Tarde'];
-var SECTIONS = ['A', 'B'];
-
-var auth = null;
-try {
-  if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-    auth = new google.auth.GoogleAuth({
-      keyFile: process.env.GOOGLE_APPLICATION_CREDENTIALS,
-      scopes: ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.file'],
-    });
-    console.log('Google Auth configurado OK');
-  } else {
-    console.log('GOOGLE_APPLICATION_CREDENTIALS no definida');
-  }
-} catch (e) {
-  console.log('Error Google Auth:', e.message);
-}
-
 var sheets = auth ? google.sheets({ version: 'v4', auth }) : null;
 var drive = auth ? google.drive({ version: 'v3', auth }) : null;
-
-console.log('sheets:', sheets ? 'OK' : 'NULL');
-console.log('SPREADSHEET_ID:', CONFIG.SPREADSHEET_ID);
 
 var telegramBot = null;
 try {
@@ -317,10 +308,6 @@ function buildSummary(data) {
 function saveSubmission(data, sessionId, callback) {
   var result = { id: 'SUB-' + Date.now(), savedAt: new Date().toISOString(), telegramSent: false, sheetRow: null, driveFileId: null };
 
-  console.log('Guardando submission:', result.id);
-  console.log('Datos:', JSON.stringify({name: data.studentName, grade: data.grade, shift: data.shift, section: data.section, hasCert: data.hasCertificate}));
-
-  // Telegram
   if (telegramBot && CONFIG.TELEGRAM_CHAT_ID) {
     var msg = '📋 *NUEVA INASISTENCIA REGISTRADA*\n\n';
     msg += '👤 *Estudiante:* ' + data.studentName + '\n';
@@ -338,7 +325,6 @@ function saveSubmission(data, sessionId, callback) {
 
     telegramBot.sendMessage(CONFIG.TELEGRAM_CHAT_ID, msg, { parse_mode: 'Markdown' }).then(function() {
       result.telegramSent = true;
-      console.log('Telegram enviado OK');
       if (data.certificateFile && data.certificateFile.path && fs.existsSync(data.certificateFile.path)) {
         var isPdf = data.certificateFile.mimetype === 'application/pdf';
         if (isPdf) {
@@ -353,7 +339,6 @@ function saveSubmission(data, sessionId, callback) {
       saveToSheet(data, result, callback);
     });
   } else {
-    console.log('Telegram no configurado');
     saveToSheet(data, result, callback);
   }
 }
@@ -372,7 +357,6 @@ function saveToSheet(data, result, callback) {
       data.hasCertificate ? '' : (data.justification || ''),
       '',
     ];
-    console.log('Guardando en Sheets:', CONFIG.SPREADSHEET_ID, CONFIG.SHEET_NAME);
     sheets.spreadsheets.values.append({
       spreadsheetId: CONFIG.SPREADSHEET_ID,
       range: "'" + CONFIG.SHEET_NAME + "'!A:J",
@@ -380,25 +364,20 @@ function saveToSheet(data, result, callback) {
       resource: { values: [row] },
     }).then(function(resp) {
       result.sheetRow = 'OK';
-      console.log('Sheets OK - filas actualizadas:', resp.data.updates ? resp.data.updates.updatedRows : 'N/A');
+      console.log('Sheets OK');
       callback(result);
     }).catch(function(err) {
       console.log('ERROR Sheets:', err.message);
       callback(result);
     });
   } else {
-    console.log('Sheets no configurado. sheets:', !!sheets, 'SPREADSHEET_ID:', CONFIG.SPREADSHEET_ID);
     callback(result);
   }
 }
 
 app.listen(PORT, function() {
-  console.log('');
-  console.log('========================================');
-  console.log('  Esc. Basica N° 1281 - Katueté');
-  console.log('  Servidor: http://localhost:' + PORT);
-  console.log('  Sheets: ' + (CONFIG.SPREADSHEET_ID ? 'OK' : 'NO'));
-  console.log('  Telegram: ' + (CONFIG.TELEGRAM_BOT_TOKEN ? 'OK' : 'NO'));
-  console.log('========================================');
-  console.log('');
+  console.log('Esc. Basica N1281 - Katuete');
+  console.log('Servidor: http://localhost:' + PORT);
+  console.log('Sheets: ' + (sheets ? 'OK' : 'NO'));
+  console.log('Telegram: ' + (telegramBot ? 'OK' : 'NO'));
 });
