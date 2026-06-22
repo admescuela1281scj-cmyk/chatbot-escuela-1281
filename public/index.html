@@ -26,25 +26,27 @@
     .msg-avatar.bot-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
     .msg-avatar.user-avatar { background: linear-gradient(135deg, #6366f1, #8b5cf6); font-size: 14px; color: #fff; font-weight: 600; }
     .msg-bubble { padding: 12px 16px; border-radius: 18px; font-size: 14.5px; line-height: 1.55; word-wrap: break-word; }
+    .msg-bubble strong { font-weight: 700; }
+    .msg-bubble em { font-style: italic; opacity: .85; }
     .message.bot .msg-bubble { background: #fff; color: #1a1a2e; border-bottom-left-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
     .message.user .msg-bubble { background: linear-gradient(135deg, #0d5e44, #1a8a5e); color: #fff; border-bottom-right-radius: 6px; }
-    .msg-bubble strong { font-weight: 600; }
-    .msg-bubble em { font-style: italic; opacity: .9; }
     .msg-time { font-size: 10.5px; opacity: .5; margin-top: 4px; display: block; }
     .message.user .msg-time { text-align: right; }
-    .options-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-    .option-btn { background: #fff; border: 2px solid #1a8a5e; color: #0d5e44; padding: 10px 18px; border-radius: 22px; font-size: 13.5px; font-weight: 600; cursor: pointer; transition: all .2s; font-family: inherit; flex: 1 1 auto; min-width: 110px; text-align: center; }
-    .option-btn:hover { background: #1a8a5e; color: #fff; transform: translateY(-1px); }
+    .options-wrap { margin-top: 12px; }
+    .options-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .option-btn { background: #fff; border: 2px solid #1a8a5e; color: #0d5e44; padding: 10px 18px; border-radius: 22px; font-size: 13.5px; font-weight: 600; cursor: pointer; transition: all .2s; font-family: inherit; text-align: center; }
+    .option-btn:hover { background: #1a8a5e; color: #fff; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(26,138,94,.25); }
+    .option-btn:active { transform: scale(.97); }
     .grade-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 10px; }
-    .grade-btn { background: #fff; border: 1.5px solid #d1d5db; color: #374151; padding: 8px 4px; border-radius: 10px; font-size: 11.5px; font-weight: 500; cursor: pointer; transition: all .15s; font-family: inherit; text-align: center; }
-    .grade-btn:hover { background: #1a8a5e; color: #fff; border-color: #1a8a5e; }
+    .grade-btn { background: #fff; border: 2px solid #d1d5db; color: #374151; padding: 10px 6px; border-radius: 12px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s; font-family: inherit; text-align: center; }
+    .grade-btn:hover { background: #1a8a5e; color: #fff; border-color: #1a8a5e; transform: scale(1.05); }
     .upload-area { margin-top: 12px; border: 2px dashed #1a8a5e; border-radius: 16px; padding: 24px 16px; text-align: center; background: rgba(26,138,94,.04); cursor: pointer; transition: all .2s; }
-    .upload-area:hover { background: rgba(26,138,94,.1); }
+    .upload-area:hover { background: rgba(26,138,94,.1); border-color: #0d5e44; }
     .upload-area .icon { font-size: 36px; margin-bottom: 8px; }
     .upload-area .label { font-size: 14px; font-weight: 600; color: #0d5e44; }
-    .upload-area .hint { font-size: 12px; color: #6b7280; }
+    .upload-area .hint { font-size: 12px; color: #6b7280; margin-top: 4px; }
     .upload-area input { display: none; }
-    .typing-indicator { display: flex; gap: 5px; padding: 12px 18px; }
+    .typing-indicator { display: flex; gap: 5px; padding: 14px 20px; }
     .typing-indicator span { width: 8px; height: 8px; background: #94a3b8; border-radius: 50%; animation: typing 1.4s infinite; }
     .typing-indicator span:nth-child(2) { animation-delay: .2s; }
     .typing-indicator span:nth-child(3) { animation-delay: .4s; }
@@ -56,8 +58,10 @@
     .input-wrapper { flex: 1; }
     .chat-input { width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 22px; font-size: 14.5px; font-family: inherit; outline: none; transition: border-color .2s; background: #f9fafb; }
     .chat-input:focus { border-color: #1a8a5e; background: #fff; }
-    .send-btn { width: 42px; height: 42px; border-radius: 50%; border: none; background: linear-gradient(135deg, #0d5e44, #1a8a5e); color: #fff; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .2s; flex-shrink: 0; }
+    .chat-input::placeholder { color: #9ca3af; }
+    .send-btn { width: 42px; height: 42px; border-radius: 50%; border: none; background: linear-gradient(135deg, #0d5e44, #1a8a5e); color: #fff; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .2s; flex-shrink: 0; box-shadow: 0 2px 8px rgba(26,138,94,.25); }
     .send-btn:hover { transform: scale(1.08); }
+    .send-btn:active { transform: scale(.95); }
     .send-btn:disabled { opacity: .4; cursor: default; transform: none; }
     #fileInput { display: none; }
     .date-sep { text-align: center; font-size: 11.5px; color: #64748b; margin: 6px 0; font-weight: 500; }
@@ -68,7 +72,7 @@
 <body>
 <div class="chat-container">
   <div class="chat-header">
-    <div class="header-avatar"><img src="https://raw.githubusercontent.com/admescuela1281scj-cmyk/chatbot-escuela-1281/main/public/logo-bethel.jpeg" alt="Escuela 1281"></div>
+    <div class="header-avatar"><img src="logo-bethel.jpeg" alt="Escuela 1281"></div>
     <div class="header-info">
       <h1>Escuela Basica N 1281</h1>
       <p><span class="status-dot"></span>Sagrado Corazon de Jesus - Katuete</p>
@@ -82,121 +86,242 @@
   </div>
   <input type="file" id="fileInput" accept="image/*,.pdf">
 </div>
+
 <script>
 (function() {
   'use strict';
-  let sessionId = 's-' + Date.now() + '-' + Math.random().toString(36).slice(2,8);
-  let isSending = false;
-  let currentStep = 'init';
-  const messagesEl = document.getElementById('chatMessages');
-  const inputEl = document.getElementById('chatInput');
-  const sendBtn = document.getElementById('sendBtn');
-  const attachBtn = document.getElementById('attachBtn');
-  const fileInput = document.getElementById('fileInput');
-  const inputArea = document.getElementById('chatInputArea');
+
+  var sessionId = 's-' + Date.now() + '-' + Math.random().toString(36).slice(2,8);
+  var isSending = false;
+  var pendingFile = null;
+  var currentStep = 'init';
+
+  var messagesEl = document.getElementById('chatMessages');
+  var inputEl = document.getElementById('chatInput');
+  var sendBtn = document.getElementById('sendBtn');
+  var attachBtn = document.getElementById('attachBtn');
+  var fileInput = document.getElementById('fileInput');
+  var inputArea = document.getElementById('chatInputArea');
+
+  var LOGO_URL = 'logo-bethel.jpeg';
 
   function timeStr() { return new Date().toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' }); }
-  function escapeHtml(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+  function escapeHtml(t) { var d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
   function formatMsg(t) { return t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(.+?)\*/g, '<em>$1</em>').replace(/\n/g, '<br>'); }
-  function scrollToBottom() { requestAnimationFrame(() => { messagesEl.scrollTop = messagesEl.scrollHeight; }); }
+  function scrollToBottom() { requestAnimationFrame(function() { messagesEl.scrollTop = messagesEl.scrollHeight; }); }
   function setSending(v) { isSending = v; sendBtn.disabled = v; inputEl.disabled = v; }
 
   function showTyping() {
-    const el = document.createElement('div'); el.className = 'message bot'; el.id = 'typing';
-    el.innerHTML = '<div class="msg-avatar bot-avatar"><img src="https://raw.githubusercontent.com/admescuela1281scj-cmyk/chatbot-escuela-1281/main/public/logo-bethel.jpeg" alt=""></div><div><div class="msg-bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div></div>';
-    messagesEl.appendChild(el); scrollToBottom();
+    var el = document.createElement('div');
+    el.className = 'message bot';
+    el.id = 'typing';
+    el.innerHTML = '<div class="msg-avatar bot-avatar"><img src="' + LOGO_URL + '" alt=""></div><div><div class="msg-bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div></div>';
+    messagesEl.appendChild(el);
+    scrollToBottom();
   }
-  function hideTyping() { const el = document.getElementById('typing'); if (el) el.remove(); }
+  function hideTyping() { var el = document.getElementById('typing'); if (el) el.remove(); }
 
-  function addMessage(type, content, extra) {
-    const msg = document.createElement('div'); msg.className = 'message ' + type;
-    const avatar = type === 'bot'
-      ? '<div class="msg-avatar bot-avatar"><img src="https://raw.githubusercontent.com/admescuela1281scj-cmyk/chatbot-escuela-1281/main/public/logo-bethel.jpeg" alt=""></div>'
+  function addMessage(type, content) {
+    var msg = document.createElement('div');
+    msg.className = 'message ' + type;
+    var avatar = type === 'bot'
+      ? '<div class="msg-avatar bot-avatar"><img src="' + LOGO_URL + '" alt=""></div>'
       : '<div class="msg-avatar user-avatar">👤</div>';
-    msg.innerHTML = avatar + '<div><div class="msg-bubble">' + content + '</div><span class="msg-time">' + timeStr() + '</span>' + (extra || '') + '</div>';
-    messagesEl.appendChild(msg); scrollToBottom(); return msg;
+    msg.innerHTML = avatar + '<div><div class="msg-bubble">' + content + '</div><span class="msg-time">' + timeStr() + '</span></div>';
+    messagesEl.appendChild(msg);
+    scrollToBottom();
+    return msg;
   }
-  function addUserMessage(t) { addMessage('user', '<span>' + escapeHtml(t) + '</span>'); }
-  function addBotMessage(html, extra) { return addMessage('bot', html, extra); }
-  function addDateSeparator() { const el = document.createElement('div'); el.className = 'date-sep'; const d = new Date(); el.innerHTML = '<span>' + d.toLocaleDateString('es-PY', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + '</span>'; messagesEl.appendChild(el); }
 
-  function addOptions(options, container) {
+  function addUserMessage(t) { addMessage('user', '<span>' + escapeHtml(t) + '</span>'); }
+  function addBotMessage(html) { return addMessage('bot', html); }
+
+  function addDateSeparator() {
+    var el = document.createElement('div');
+    el.className = 'date-sep';
+    el.innerHTML = '<span>' + new Date().toLocaleDateString('es-PY', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + '</span>';
+    messagesEl.appendChild(el);
+  }
+
+  function addOptions(options) {
     if (!options || !options.length) return;
-    const grid = document.createElement('div'); grid.className = 'options-grid';
-    options.forEach(opt => { const btn = document.createElement('button'); btn.className = 'option-btn'; btn.textContent = opt; btn.onclick = () => sendOption(opt); grid.appendChild(btn); });
-    (container || messagesEl).appendChild(grid); scrollToBottom();
+    var wrap = document.createElement('div');
+    wrap.className = 'options-wrap';
+    var grid = document.createElement('div');
+    grid.className = 'options-grid';
+    for (var i = 0; i < options.length; i++) {
+      var btn = document.createElement('button');
+      btn.className = 'option-btn';
+      btn.textContent = options[i];
+      btn.setAttribute('data-value', options[i]);
+      btn.addEventListener('click', function() { sendOption(this.getAttribute('data-value')); });
+      grid.appendChild(btn);
+    }
+    wrap.appendChild(grid);
+    messagesEl.appendChild(wrap);
+    scrollToBottom();
   }
-  function addGradeOptions(options, container) {
-    const grid = document.createElement('div'); grid.className = 'grade-grid';
-    options.forEach((opt, i) => { const btn = document.createElement('button'); btn.className = 'grade-btn'; btn.textContent = opt; btn.onclick = () => sendOption((i+1).toString()); grid.appendChild(btn); });
-    (container || messagesEl).appendChild(grid); scrollToBottom();
+
+  function addGradeOptions(options) {
+    var wrap = document.createElement('div');
+    wrap.className = 'options-wrap';
+    var grid = document.createElement('div');
+    grid.className = 'grade-grid';
+    for (var i = 0; i < options.length; i++) {
+      var btn = document.createElement('button');
+      btn.className = 'grade-btn';
+      btn.textContent = options[i];
+      btn.setAttribute('data-index', String(i + 1));
+      btn.addEventListener('click', function() { sendOption(this.getAttribute('data-index')); });
+      grid.appendChild(btn);
+    }
+    wrap.appendChild(grid);
+    messagesEl.appendChild(wrap);
+    scrollToBottom();
   }
-  function addUploadArea(container) {
-    const area = document.createElement('div'); area.className = 'upload-area';
+
+  function addUploadArea() {
+    var area = document.createElement('div');
+    area.className = 'upload-area';
     area.innerHTML = '<div class="icon">📤</div><div class="label">Toque aqui para adjuntar</div><div class="hint">o arrastre su archivo (JPG, PNG, PDF)</div><input type="file" accept="image/*,.pdf" id="inlineFileInput">';
-    (container || messagesEl).appendChild(area); scrollToBottom();
-    const inlineInput = area.querySelector('#inlineFileInput');
-    area.addEventListener('click', () => inlineInput.click());
-    inlineInput.addEventListener('change', (e) => { if (e.target.files[0]) handleFileSelected(e.target.files[0]); });
+    messagesEl.appendChild(area);
+    scrollToBottom();
+    var inlineInput = area.querySelector('#inlineFileInput');
+    area.addEventListener('click', function() { inlineInput.click(); });
+    inlineInput.addEventListener('change', function(e) { if (e.target.files[0]) handleFileSelected(e.target.files[0]); });
+    area.addEventListener('dragover', function(e) { e.preventDefault(); area.style.background = 'rgba(26,138,94,.1)'; });
+    area.addEventListener('dragleave', function() { area.style.background = 'rgba(26,138,94,.04)'; });
+    area.addEventListener('drop', function(e) { e.preventDefault(); area.style.background = 'rgba(26,138,94,.04)'; if (e.dataTransfer.files[0]) handleFileSelected(e.dataTransfer.files[0]); });
   }
 
   function handleFileSelected(file) {
-    const allowed = ['image/jpeg','image/png','image/webp','image/gif','application/pdf'];
-    if (!allowed.includes(file.type)) { addBotMessage('Formato no aceptado. Use JPG, PNG o PDF.'); return; }
+    var allowed = ['image/jpeg','image/png','image/webp','image/gif','application/pdf'];
+    if (allowed.indexOf(file.type) === -1) { addBotMessage('Formato no aceptado. Use JPG, PNG o PDF.'); return; }
     if (file.size > 10 * 1024 * 1024) { addBotMessage('El archivo excede 10 MB.'); return; }
-    if (currentStep === 'upload_certificate') { addUserMessage('📎 ' + file.name); sendFileToServer(file); }
-    else { addBotMessage('📎 "' + file.name + '" listo. Lo usare cuando lleguemos al paso del certificado.'); }
-  }
-
-  async function sendMessage(text) {
-    if (isSending) return; setSending(true); showTyping();
-    try {
-      const body = new FormData(); body.append('sessionId', sessionId); body.append('message', text || '');
-      const resp = await fetch('/api/chat', { method: 'POST', body }); const data = await resp.json();
-      hideTyping();
-      if (!data.success) { addBotMessage('Error. Intente de nuevo.'); return; }
-      const lastMsg = addBotMessage(formatMsg(data.response));
-      if (data.options) { if (data.options.length === 12) addGradeOptions(data.options, lastMsg.querySelector('div')); else addOptions(data.options, lastMsg.querySelector('div')); }
-      if (data.showUpload) addUploadArea(lastMsg.querySelector('div'));
-      if (data.completed) { currentStep = 'completed'; addOptions(['Si, registrar otra', 'No, gracias'], lastMsg.querySelector('div')); }
-    } catch (err) { hideTyping(); addBotMessage('Error de conexion.'); } finally { setSending(false); inputEl.focus(); }
-  }
-
-  async function sendFileToServer(file) {
-    if (isSending) return; setSending(true); showTyping();
-    try {
-      const body = new FormData(); body.append('sessionId', sessionId); body.append('message', ''); body.append('certificate', file);
-      const resp = await fetch('/api/chat', { method: 'POST', body }); const data = await resp.json();
-      hideTyping();
-      if (!data.success) { addBotMessage('Error al subir archivo.'); return; }
-      const lastMsg = addBotMessage(formatMsg(data.response));
-      if (data.options) addOptions(data.options, lastMsg.querySelector('div'));
-      if (data.showUpload) addUploadArea(lastMsg.querySelector('div'));
-      if (data.completed) { currentStep = 'completed'; addOptions(['Si, registrar otra', 'No, gracias'], lastMsg.querySelector('div')); }
-    } catch (err) { hideTyping(); addBotMessage('Error de conexion.'); } finally { setSending(false); inputEl.focus(); }
+    if (currentStep === 'upload_certificate') {
+      addUserMessage('📎 ' + file.name);
+      sendFileToServer(file);
+    } else {
+      addBotMessage('📎 "' + file.name + '" guardado. Lo usare cuando lleguemos al paso del certificado.');
+    }
   }
 
   function sendOption(text) {
-    document.querySelectorAll('.option-btn, .grade-btn').forEach(b => { b.disabled = true; b.style.opacity = '.5'; });
-    if (text.includes('registrar otra') || text.includes('Si, registrar')) { sessionId = 's-' + Date.now(); currentStep = 'init'; sendMessage(''); return; }
-    if (text.includes('No, gracias')) { addBotMessage('Gracias! Que tenga un excelente dia. Si necesita registrar otra inasistencia, recargue la pagina.'); inputArea.classList.add('hidden'); return; }
+    var btns = document.querySelectorAll('.option-btn, .grade-btn');
+    for (var i = 0; i < btns.length; i++) { btns[i].disabled = true; btns[i].style.opacity = '.5'; btns[i].style.cursor = 'default'; }
+
+    if (text.indexOf('registrar otra') !== -1 || text.indexOf('Si, registrar') !== -1) {
+      sessionId = 's-' + Date.now() + '-' + Math.random().toString(36).slice(2,8);
+      currentStep = 'init';
+      sendMessage('');
+      return;
+    }
+    if (text.indexOf('No, gracias') !== -1) {
+      addBotMessage('Gracias por usar nuestro sistema! Que tenga un excelente dia. 🌟<br><br>Si necesita registrar otra inasistencia, recargue la pagina.');
+      inputArea.classList.add('hidden');
+      return;
+    }
+
     addUserMessage(text);
-    let val = text;
-    if (text.includes('Si') || text.includes('certificado')) val = 'si';
-    if (text.includes('No') || text.includes('solo')) val = 'no';
-    if (text === 'Mañana' || text === 'Tarde') val = text;
-    if (text === 'A' || text === 'B') val = text;
-    sendMessage(val);
+    sendMessage(text);
   }
 
-  sendBtn.addEventListener('click', () => { const text = inputEl.value.trim(); if (!text) return; inputEl.value = ''; addUserMessage(text); sendMessage(text); });
-  inputEl.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendBtn.click(); } });
-  attachBtn.addEventListener('click', () => fileInput.click());
-  fileInput.addEventListener('change', (e) => { if (e.target.files[0]) handleFileSelected(e.target.files[0]); fileInput.value = ''; });
-  messagesEl.addEventListener('dragover', (e) => e.preventDefault());
-  messagesEl.addEventListener('drop', (e) => { e.preventDefault(); if (e.dataTransfer.files[0]) handleFileSelected(e.dataTransfer.files[0]); });
+  function sendMessage(text) {
+    if (isSending) return;
+    setSending(true);
+    showTyping();
 
-  addDateSeparator(); sendMessage('');
+    var body = new FormData();
+    body.append('sessionId', sessionId);
+    body.append('message', text || '');
+
+    fetch('/api/chat', { method: 'POST', body: body })
+      .then(function(resp) { return resp.json(); })
+      .then(function(data) {
+        hideTyping();
+        if (!data.success) { addBotMessage('Error. Intente de nuevo.'); return; }
+
+        addBotMessage(formatMsg(data.response));
+
+        if (data.options && data.options.length > 0) {
+          if (data.options.length === 12) {
+            addGradeOptions(data.options);
+          } else {
+            addOptions(data.options);
+          }
+        }
+
+        if (data.showUpload) {
+          addUploadArea();
+        }
+
+        if (data.completed) {
+          currentStep = 'completed';
+          addOptions(['Si, registrar otra', 'No, gracias']);
+        }
+      })
+      .catch(function(err) {
+        hideTyping();
+        addBotMessage('Error de conexion. Verifique su internet e intente de nuevo.');
+      })
+      .finally(function() {
+        setSending(false);
+        inputEl.focus();
+      });
+  }
+
+  function sendFileToServer(file) {
+    if (isSending) return;
+    setSending(true);
+    showTyping();
+
+    var body = new FormData();
+    body.append('sessionId', sessionId);
+    body.append('message', '');
+    body.append('certificate', file);
+
+    fetch('/api/chat', { method: 'POST', body: body })
+      .then(function(resp) { return resp.json(); })
+      .then(function(data) {
+        hideTyping();
+        if (!data.success) { addBotMessage('Error al subir archivo.'); return; }
+        addBotMessage(formatMsg(data.response));
+        if (data.options && data.options.length > 0) {
+          if (data.options.length === 12) addGradeOptions(data.options);
+          else addOptions(data.options);
+        }
+        if (data.showUpload) addUploadArea();
+        if (data.completed) { currentStep = 'completed'; addOptions(['Si, registrar otra', 'No, gracias']); }
+      })
+      .catch(function() {
+        hideTyping();
+        addBotMessage('Error de conexion al subir archivo.');
+      })
+      .finally(function() {
+        setSending(false);
+        inputEl.focus();
+      });
+  }
+
+  sendBtn.addEventListener('click', function() {
+    var text = inputEl.value.trim();
+    if (!text) return;
+    inputEl.value = '';
+    addUserMessage(text);
+    sendMessage(text);
+  });
+
+  inputEl.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendBtn.click(); }
+  });
+
+  attachBtn.addEventListener('click', function() { fileInput.click(); });
+  fileInput.addEventListener('change', function(e) { if (e.target.files[0]) handleFileSelected(e.target.files[0]); fileInput.value = ''; });
+  messagesEl.addEventListener('dragover', function(e) { e.preventDefault(); });
+  messagesEl.addEventListener('drop', function(e) { e.preventDefault(); if (e.dataTransfer.files[0]) handleFileSelected(e.dataTransfer.files[0]); });
+
+  addDateSeparator();
+  sendMessage('');
 })();
 </script>
 </body>
