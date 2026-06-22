@@ -409,16 +409,36 @@ function saveSubmission(data, sessionId, callback) {
       result.telegramSent = true;
       console.log('Telegram enviado OK');
       if (data.certificateFile && data.certificateFile.path && fs.existsSync(data.certificateFile.path)) {
-        uploadToHost(data.certificateFile.path, function(link) {
-          result.fileLink = link;
-          if (link) {
-            var isPdf = data.certificateFile.mimetype === 'application/pdf';
-            if (isPdf) {
-              telegramBot.sendDocument(CONFIG.TELEGRAM_CHAT_ID, data.certificateFile.path, { caption: '📄 Certificado de ' + data.studentName + '\n🔗 ' + link });
-            } else {
-              telegramBot.sendPhoto(CONFIG.TELEGRAM_CHAT_ID, data.certificateFile.path, { caption: '📄 Certificado de ' + data.studentName + '\n🔗 ' + link });
-            }
+        var isPdf = data.certificateFile.mimetype === 'application/pdf';
+        var sendPromise;
+        if (isPdf) {
+          sendPromise = telegramBot.sendDocument(CONFIG.TELEGRAM_CHAT_ID, data.certificateFile.path, { caption: '📄 Certificado de ' + data.studentName });
+        } else {
+          sendPromise = telegramBot.sendPhoto(CONFIG.TELEGRAM_CHAT_ID, data.certificateFile.path, { caption: '📄 Certificado de ' + data.studentName });
+        }
+        sendPromise.then(function(msg) {
+          var fileId = null;
+          if (isPdf && msg.document) {
+            fileId = msg.document.file_id;
+          } else if (!isPdf && msg.photo && msg.photo.length > 0) {
+            fileId = msg.photo[msg.photo.length - 1].file_id;
           }
+          if (fileId) {
+            telegramBot.getFile(fileId).then(function(fileInfo) {
+              if (fileInfo.file_path) {
+                result.fileLink = 'https://api.telegram.org/file/bot' + CONFIG.TELEGRAM_BOT_TOKEN + '/' + fileInfo.file_path;
+                console.log('Link Telegram:', result.fileLink);
+                var linkMsg = '🔗 Link del certificado:\n' + result.fileLink;
+                telegramBot.sendMessage(CONFIG.TELEGRAM_CHAT_ID, linkMsg);
+              }
+              saveToSheet(data, result, callback);
+            }).catch(function() {
+              saveToSheet(data, result, callback);
+            });
+          } else {
+            saveToSheet(data, result, callback);
+          }
+        }).catch(function() {
           saveToSheet(data, result, callback);
         });
       } else {
