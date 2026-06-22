@@ -1,328 +1,379 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Escuela Basica N 1281 - Registro de Inasistencia</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0a4d3c, #1a8a5e); display: flex; align-items: center; justify-content: center; padding: 16px; }
-    .chat-container { width: 100%; max-width: 480px; height: 96vh; max-height: 780px; background: #fff; border-radius: 24px; box-shadow: 0 25px 80px rgba(0,0,0,.35); display: flex; flex-direction: column; overflow: hidden; }
-    .chat-header { background: linear-gradient(135deg, #0d5e44, #1a8a5e); color: #fff; padding: 18px 20px; display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
-    .header-avatar { width: 52px; height: 52px; border-radius: 50%; background: #fff; overflow: hidden; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
-    .header-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-    .header-info h1 { font-size: 16px; font-weight: 700; line-height: 1.2; }
-    .header-info p { font-size: 12px; opacity: .85; margin-top: 2px; }
-    .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #4ade80; margin-right: 4px; animation: pulse 2s infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
-    .chat-messages { flex: 1; overflow-y: auto; padding: 20px 16px; display: flex; flex-direction: column; gap: 10px; background: #f0f2f5; scroll-behavior: smooth; }
-    .message { display: flex; gap: 8px; max-width: 88%; animation: msgIn .35s cubic-bezier(.4,0,.2,1) both; }
-    @keyframes msgIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-    .message.bot { align-self: flex-start; }
-    .message.user { align-self: flex-end; flex-direction: row-reverse; }
-    .msg-avatar { width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-top: 2px; }
-    .msg-avatar.bot-avatar { background: #fff; box-shadow: 0 2px 6px rgba(26,138,94,.3); overflow: hidden; }
-    .msg-avatar.bot-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-    .msg-avatar.user-avatar { background: linear-gradient(135deg, #6366f1, #8b5cf6); font-size: 14px; color: #fff; font-weight: 600; }
-    .msg-bubble { padding: 12px 16px; border-radius: 18px; font-size: 14.5px; line-height: 1.55; word-wrap: break-word; }
-    .msg-bubble strong { font-weight: 700; }
-    .msg-bubble em { font-style: italic; opacity: .85; }
-    .message.bot .msg-bubble { background: #fff; color: #1a1a2e; border-bottom-left-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
-    .message.user .msg-bubble { background: linear-gradient(135deg, #0d5e44, #1a8a5e); color: #fff; border-bottom-right-radius: 6px; }
-    .msg-time { font-size: 10.5px; opacity: .5; margin-top: 4px; display: block; }
-    .message.user .msg-time { text-align: right; }
-    .options-wrap { margin-top: 12px; }
-    .options-grid { display: flex; flex-wrap: wrap; gap: 8px; }
-    .option-btn { background: #fff; border: 2px solid #1a8a5e; color: #0d5e44; padding: 10px 18px; border-radius: 22px; font-size: 13.5px; font-weight: 600; cursor: pointer; transition: all .2s; font-family: inherit; text-align: center; }
-    .option-btn:hover { background: #1a8a5e; color: #fff; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(26,138,94,.25); }
-    .option-btn:active { transform: scale(.97); }
-    .grade-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 10px; }
-    .grade-btn { background: #fff; border: 2px solid #d1d5db; color: #374151; padding: 10px 6px; border-radius: 12px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s; font-family: inherit; text-align: center; }
-    .grade-btn:hover { background: #1a8a5e; color: #fff; border-color: #1a8a5e; transform: scale(1.05); }
-    .upload-area { margin-top: 12px; border: 2px dashed #1a8a5e; border-radius: 16px; padding: 24px 16px; text-align: center; background: rgba(26,138,94,.04); cursor: pointer; transition: all .2s; }
-    .upload-area:hover { background: rgba(26,138,94,.1); border-color: #0d5e44; }
-    .upload-area .icon { font-size: 36px; margin-bottom: 8px; }
-    .upload-area .label { font-size: 14px; font-weight: 600; color: #0d5e44; }
-    .upload-area .hint { font-size: 12px; color: #6b7280; margin-top: 4px; }
-    .upload-area input { display: none; }
-    .typing-indicator { display: flex; gap: 5px; padding: 14px 20px; }
-    .typing-indicator span { width: 8px; height: 8px; background: #94a3b8; border-radius: 50%; animation: typing 1.4s infinite; }
-    .typing-indicator span:nth-child(2) { animation-delay: .2s; }
-    .typing-indicator span:nth-child(3) { animation-delay: .4s; }
-    @keyframes typing { 0%, 100% { opacity: .3; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-4px); } }
-    .chat-input-area { padding: 12px 16px; background: #fff; border-top: 1px solid #e5e7eb; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-    .chat-input-area.hidden { display: none; }
-    .attach-btn { width: 42px; height: 42px; border-radius: 50%; border: none; background: #f3f4f6; color: #4b5563; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s; flex-shrink: 0; }
-    .attach-btn:hover { background: #e5e7eb; color: #1a8a5e; }
-    .input-wrapper { flex: 1; }
-    .chat-input { width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 22px; font-size: 14.5px; font-family: inherit; outline: none; transition: border-color .2s; background: #f9fafb; }
-    .chat-input:focus { border-color: #1a8a5e; background: #fff; }
-    .chat-input::placeholder { color: #9ca3af; }
-    .send-btn { width: 42px; height: 42px; border-radius: 50%; border: none; background: linear-gradient(135deg, #0d5e44, #1a8a5e); color: #fff; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .2s; flex-shrink: 0; box-shadow: 0 2px 8px rgba(26,138,94,.25); }
-    .send-btn:hover { transform: scale(1.08); }
-    .send-btn:active { transform: scale(.95); }
-    .send-btn:disabled { opacity: .4; cursor: default; transform: none; }
-    #fileInput { display: none; }
-    .date-sep { text-align: center; font-size: 11.5px; color: #64748b; margin: 6px 0; font-weight: 500; }
-    .date-sep span { background: #e2e8f0; padding: 4px 14px; border-radius: 10px; }
-    @media (max-width: 520px) { html, body { padding: 0; } .chat-container { height: 100vh; max-height: 100vh; border-radius: 0; } }
-  </style>
-</head>
-<body>
-<div class="chat-container">
-  <div class="chat-header">
-    <div class="header-avatar"><img src="logo-bethel.jpeg" alt="Escuela 1281"></div>
-    <div class="header-info">
-      <h1>Escuela Basica N 1281</h1>
-      <p><span class="status-dot"></span>Sagrado Corazon de Jesus - Katuete</p>
-    </div>
-  </div>
-  <div class="chat-messages" id="chatMessages"></div>
-  <div class="chat-input-area" id="chatInputArea">
-    <button class="attach-btn" id="attachBtn" title="Adjuntar">📎</button>
-    <div class="input-wrapper"><input type="text" class="chat-input" id="chatInput" placeholder="Escriba su mensaje..." autocomplete="off"></div>
-    <button class="send-btn" id="sendBtn" title="Enviar"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
-  </div>
-  <input type="file" id="fileInput" accept="image/*,.pdf">
-</div>
+require('dotenv').config();
+const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const { google } = require('googleapis');
+const TelegramBot = require('node-telegram-bot-api');
 
-<script>
-(function() {
-  'use strict';
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-  var sessionId = 's-' + Date.now() + '-' + Math.random().toString(36).slice(2,8);
-  var isSending = false;
-  var pendingFile = null;
-  var currentStep = 'init';
+const CONFIG = {
+  SPREADSHEET_ID: process.env.SPREADSHEET_ID,
+  SHEET_NAME: process.env.SHEET_NAME || 'certificado medico',
+  FOLDER_ID: process.env.FOLDER_ID,
+  TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
+  TELEGRAM_CHAT_ID: process.env.TELEGRAM_CHAT_ID,
+  MAX_FILE_SIZE: 10 * 1024 * 1024,
+};
 
-  var messagesEl = document.getElementById('chatMessages');
-  var inputEl = document.getElementById('chatInput');
-  var sendBtn = document.getElementById('sendBtn');
-  var attachBtn = document.getElementById('attachBtn');
-  var fileInput = document.getElementById('fileInput');
-  var inputArea = document.getElementById('chatInputArea');
+const GRADES = [
+  'Pre-Jardin', 'Jardin', 'Preparatoria',
+  '1er Grado', '2do Grado', '3er Grado',
+  '4to Grado', '5to Grado', '6to Grado',
+  '7mo Grado', '8vo Grado', '9no Grado'
+];
 
-  var LOGO_URL = 'logo-bethel.jpeg';
+const SHIFTS = ['Manana', 'Tarde'];
+const SECTIONS = ['A', 'B'];
 
-  function timeStr() { return new Date().toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' }); }
-  function escapeHtml(t) { var d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
-  function formatMsg(t) { return t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(.+?)\*/g, '<em>$1</em>').replace(/\n/g, '<br>'); }
-  function scrollToBottom() { requestAnimationFrame(function() { messagesEl.scrollTop = messagesEl.scrollHeight; }); }
-  function setSending(v) { isSending = v; sendBtn.disabled = v; inputEl.disabled = v; }
-
-  function showTyping() {
-    var el = document.createElement('div');
-    el.className = 'message bot';
-    el.id = 'typing';
-    el.innerHTML = '<div class="msg-avatar bot-avatar"><img src="' + LOGO_URL + '" alt=""></div><div><div class="msg-bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div></div>';
-    messagesEl.appendChild(el);
-    scrollToBottom();
+let auth;
+try {
+  if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    auth = new google.auth.GoogleAuth({
+      keyFile: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.file'],
+    });
   }
-  function hideTyping() { var el = document.getElementById('typing'); if (el) el.remove(); }
+} catch (e) {
+  console.warn('Error Google Auth:', e.message);
+}
 
-  function addMessage(type, content) {
-    var msg = document.createElement('div');
-    msg.className = 'message ' + type;
-    var avatar = type === 'bot'
-      ? '<div class="msg-avatar bot-avatar"><img src="' + LOGO_URL + '" alt=""></div>'
-      : '<div class="msg-avatar user-avatar">👤</div>';
-    msg.innerHTML = avatar + '<div><div class="msg-bubble">' + content + '</div><span class="msg-time">' + timeStr() + '</span></div>';
-    messagesEl.appendChild(msg);
-    scrollToBottom();
-    return msg;
+const sheets = auth ? google.sheets({ version: 'v4', auth }) : null;
+const drive = auth ? google.drive({ version: 'v3', auth }) : null;
+
+let telegramBot = null;
+try {
+  if (CONFIG.TELEGRAM_BOT_TOKEN) {
+    telegramBot = new TelegramBot(CONFIG.TELEGRAM_BOT_TOKEN, { polling: false });
+    console.log('Telegram Bot conectado');
+  }
+} catch (e) {
+  console.warn('Error Telegram:', e.message);
+}
+
+const conversations = {};
+const submissions = [];
+
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+const storage = multer.diskStorage({
+  destination: function(_req, _file, cb) { cb(null, uploadDir); },
+  filename: function(_req, file, cb) {
+    var unique = Date.now() + '-' + Math.round(Math.random() * 1e6);
+    var ext = path.extname(file.originalname) || '.bin';
+    cb(null, 'cert-' + unique + ext);
+  },
+});
+
+const fileFilter = function(_req, file, cb) {
+  var allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
+  cb(null, allowed.indexOf(file.mimetype) !== -1);
+};
+
+const upload = multer({ storage: storage, fileFilter: fileFilter, limits: { fileSize: CONFIG.MAX_FILE_SIZE } });
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(uploadDir));
+
+app.get('/', function(_req, res) {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.post('/api/chat', upload.single('certificate'), function(req, res) {
+  var sessionId = req.body.sessionId || 'default';
+  var text = (req.body.message || '').trim();
+  var file = req.file || null;
+
+  if (!conversations[sessionId]) {
+    conversations[sessionId] = { step: 'welcome', data: {} };
   }
 
-  function addUserMessage(t) { addMessage('user', '<span>' + escapeHtml(t) + '</span>'); }
-  function addBotMessage(html) { return addMessage('bot', html); }
+  var conv = conversations[sessionId];
+  var response = '';
+  var options = null;
+  var showUpload = false;
+  var showSummary = false;
+  var completed = false;
+  var completedData = null;
 
-  function addDateSeparator() {
-    var el = document.createElement('div');
-    el.className = 'date-sep';
-    el.innerHTML = '<span>' + new Date().toLocaleDateString('es-PY', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + '</span>';
-    messagesEl.appendChild(el);
+  if (file && conv.step !== 'upload_certificate') {
+    conv.data.certificateFile = {
+      filename: file.filename, originalname: file.originalname,
+      mimetype: file.mimetype, size: file.size, path: file.path,
+    };
   }
 
-  function addOptions(options) {
-    if (!options || !options.length) return;
-    var wrap = document.createElement('div');
-    wrap.className = 'options-wrap';
-    var grid = document.createElement('div');
-    grid.className = 'options-grid';
-    for (var i = 0; i < options.length; i++) {
-      var btn = document.createElement('button');
-      btn.className = 'option-btn';
-      btn.textContent = options[i];
-      btn.setAttribute('data-value', options[i]);
-      btn.addEventListener('click', function() { sendOption(this.getAttribute('data-value')); });
-      grid.appendChild(btn);
-    }
-    wrap.appendChild(grid);
-    messagesEl.appendChild(wrap);
-    scrollToBottom();
-  }
+  switch (conv.step) {
+    case 'welcome':
+      conv.step = 'name';
+      response = 'Hola! Soy el asistente virtual de la Escuela Basica N 1281 Sagrado Corazon de Jesus - Katuete. Estoy aqui para ayudarle a registrar la inasistencia de su hijo/a. Solo necesito algunos datos y, si tiene un certificado medico, puede adjuntarlo directamente aqui. Cual es el nombre completo del estudiante?';
+      break;
 
-  function addGradeOptions(options) {
-    var wrap = document.createElement('div');
-    wrap.className = 'options-wrap';
-    var grid = document.createElement('div');
-    grid.className = 'grade-grid';
-    for (var i = 0; i < options.length; i++) {
-      var btn = document.createElement('button');
-      btn.className = 'grade-btn';
-      btn.textContent = options[i];
-      btn.setAttribute('data-index', String(i + 1));
-      btn.addEventListener('click', function() { sendOption(this.getAttribute('data-index')); });
-      grid.appendChild(btn);
-    }
-    wrap.appendChild(grid);
-    messagesEl.appendChild(wrap);
-    scrollToBottom();
-  }
+    case 'name':
+      if (!text || text.split(/\s+/).filter(Boolean).length < 2) {
+        response = 'Necesito el nombre y apellido del estudiante. Ejemplo: Maria Lopez Gonzalez';
+        break;
+      }
+      conv.data.studentName = text;
+      conv.step = 'grade';
+      response = 'Perfecto, ' + text + '! Ahora seleccione el grado del estudiante:';
+      options = GRADES;
+      break;
 
-  function addUploadArea() {
-    var area = document.createElement('div');
-    area.className = 'upload-area';
-    area.innerHTML = '<div class="icon">📤</div><div class="label">Toque aqui para adjuntar</div><div class="hint">o arrastre su archivo (JPG, PNG, PDF)</div><input type="file" accept="image/*,.pdf" id="inlineFileInput">';
-    messagesEl.appendChild(area);
-    scrollToBottom();
-    var inlineInput = area.querySelector('#inlineFileInput');
-    area.addEventListener('click', function() { inlineInput.click(); });
-    inlineInput.addEventListener('change', function(e) { if (e.target.files[0]) handleFileSelected(e.target.files[0]); });
-    area.addEventListener('dragover', function(e) { e.preventDefault(); area.style.background = 'rgba(26,138,94,.1)'; });
-    area.addEventListener('dragleave', function() { area.style.background = 'rgba(26,138,94,.04)'; });
-    area.addEventListener('drop', function(e) { e.preventDefault(); area.style.background = 'rgba(26,138,94,.04)'; if (e.dataTransfer.files[0]) handleFileSelected(e.dataTransfer.files[0]); });
-  }
+    case 'grade':
+      var idx = parseInt(text) - 1;
+      var byIndex = !isNaN(idx) && idx >= 0 && idx < GRADES.length;
+      var byName = null;
+      for (var g = 0; g < GRADES.length; g++) {
+        if (GRADES[g].toLowerCase() === text.toLowerCase()) { byName = GRADES[g]; break; }
+      }
+      if (!byIndex && !byName) {
+        response = 'Por favor seleccione un grado valido de la lista.';
+        options = GRADES;
+        break;
+      }
+      conv.data.grade = byIndex ? GRADES[idx] : byName;
+      conv.step = 'shift';
+      response = 'Grado: ' + conv.data.grade + '. Seleccione el turno:';
+      options = SHIFTS;
+      break;
 
-  function handleFileSelected(file) {
-    var allowed = ['image/jpeg','image/png','image/webp','image/gif','application/pdf'];
-    if (allowed.indexOf(file.type) === -1) { addBotMessage('Formato no aceptado. Use JPG, PNG o PDF.'); return; }
-    if (file.size > 10 * 1024 * 1024) { addBotMessage('El archivo excede 10 MB.'); return; }
-    if (currentStep === 'upload_certificate') {
-      addUserMessage('📎 ' + file.name);
-      sendFileToServer(file);
-    } else {
-      addBotMessage('📎 "' + file.name + '" guardado. Lo usare cuando lleguemos al paso del certificado.');
-    }
-  }
+    case 'shift':
+      var validShift = null;
+      for (var s = 0; s < SHIFTS.length; s++) {
+        if (SHIFTS[s].toLowerCase() === text.toLowerCase()) { validShift = SHIFTS[s]; break; }
+      }
+      if (!validShift) {
+        response = 'Seleccione un turno valido.';
+        options = SHIFTS;
+        break;
+      }
+      conv.data.shift = validShift;
+      conv.step = 'section';
+      response = 'Turno: ' + validShift + '. Seleccione la seccion:';
+      options = SECTIONS;
+      break;
 
-  function sendOption(text) {
-    var btns = document.querySelectorAll('.option-btn, .grade-btn');
-    for (var i = 0; i < btns.length; i++) { btns[i].disabled = true; btns[i].style.opacity = '.5'; btns[i].style.cursor = 'default'; }
+    case 'section':
+      var validSec = null;
+      for (var sec = 0; sec < SECTIONS.length; sec++) {
+        if (SECTIONS[sec].toLowerCase() === text.toLowerCase()) { validSec = SECTIONS[sec]; break; }
+      }
+      if (!validSec) {
+        response = 'Seleccione una seccion valida (A o B).';
+        options = SECTIONS;
+        break;
+      }
+      conv.data.section = validSec;
+      conv.step = 'has_certificate';
+      response = 'Seccion: ' + validSec + '. Cuenta con certificado medico para justificar la inasistencia?';
+      options = ['Si, tengo certificado', 'No, solo justificacion'];
+      break;
 
-    if (text.indexOf('registrar otra') !== -1 || text.indexOf('Si, registrar') !== -1) {
-      sessionId = 's-' + Date.now() + '-' + Math.random().toString(36).slice(2,8);
-      currentStep = 'init';
-      sendMessage('');
-      return;
-    }
-    if (text.indexOf('No, gracias') !== -1) {
-      addBotMessage('Gracias por usar nuestro sistema! Que tenga un excelente dia. 🌟<br><br>Si necesita registrar otra inasistencia, recargue la pagina.');
-      inputArea.classList.add('hidden');
-      return;
-    }
+    case 'has_certificate':
+      var lower = text.toLowerCase();
+      var hasCert = lower.indexOf('si') !== -1 || lower.indexOf('certificado') !== -1;
+      var noCert = lower.indexOf('no') !== -1 || lower.indexOf('justificacion') !== -1;
+      if (!hasCert && !noCert) {
+        response = 'Por favor seleccione una opcion:';
+        options = ['Si, tengo certificado', 'No, solo justificacion'];
+        break;
+      }
+      if (hasCert) {
+        conv.data.hasCertificate = true;
+        conv.step = 'upload_certificate';
+        response = 'Adjunte el certificado medico. Puede subir una foto o PDF del certificado. Use el boton de abajo para seleccionar el archivo.';
+        showUpload = true;
+      } else {
+        conv.data.hasCertificate = false;
+        conv.step = 'justification';
+        response = 'Escriba la justificacion de la inasistencia. Indique el motivo por el cual el estudiante no asistio a clases.';
+      }
+      break;
 
-    addUserMessage(text);
-    sendMessage(text);
-  }
+    case 'upload_certificate':
+      if (!file && text) {
+        if (conv.data.certificateFile) {
+          conv.step = 'summary';
+          showSummary = true;
+          response = buildSummary(conv.data);
+          break;
+        }
+        response = 'Por favor adjunte el certificado medico como archivo (foto o PDF).';
+        showUpload = true;
+        break;
+      }
+      if (!file) {
+        if (conv.data.certificateFile) {
+          conv.step = 'summary';
+          showSummary = true;
+          response = buildSummary(conv.data);
+          break;
+        }
+        response = 'Esperando el certificado medico... Use el boton de abajo para adjuntar.';
+        showUpload = true;
+        break;
+      }
+      conv.data.certificateFile = {
+        filename: file.filename, originalname: file.originalname,
+        mimetype: file.mimetype, size: file.size, path: file.path,
+      };
+      conv.step = 'summary';
+      showSummary = true;
+      response = 'Archivo recibido: ' + file.originalname + '\n\n' + buildSummary(conv.data);
+      break;
 
-  function sendMessage(text) {
-    if (isSending) return;
-    setSending(true);
-    showTyping();
+    case 'justification':
+      if (!text || text.length < 10) {
+        response = 'La justificacion debe tener al menos 10 caracteres. Por favor detalle el motivo.';
+        break;
+      }
+      conv.data.justification = text;
+      conv.step = 'summary';
+      showSummary = true;
+      response = buildSummary(conv.data);
+      break;
 
-    var body = new FormData();
-    body.append('sessionId', sessionId);
-    body.append('message', text || '');
-
-    fetch('/api/chat', { method: 'POST', body: body })
-      .then(function(resp) { return resp.json(); })
-      .then(function(data) {
-        hideTyping();
-        if (!data.success) { addBotMessage('Error. Intente de nuevo.'); return; }
-
-        addBotMessage(formatMsg(data.response));
-
-        if (data.options && data.options.length > 0) {
-          if (data.options.length === 12) {
-            addGradeOptions(data.options);
+    case 'summary':
+      if (conv.data.studentName) {
+        saveSubmission(conv.data, sessionId, function(saveResult) {
+          completed = true;
+          completedData = saveResult;
+          response = 'Registro completado con exito!\n\n';
+          response += 'Estudiante: ' + conv.data.studentName + '\n';
+          response += 'Grado: ' + conv.data.grade + '\n';
+          response += 'Turno: ' + conv.data.shift + '\n';
+          response += 'Seccion: ' + conv.data.section + '\n';
+          if (conv.data.hasCertificate) {
+            response += 'Certificado: Si (' + (conv.data.certificateFile ? conv.data.certificateFile.originalname : 'adjunto') + ')\n';
           } else {
-            addOptions(data.options);
+            response += 'Justificacion: ' + (conv.data.justification || '') + '\n';
           }
-        }
+          response += '\n';
+          if (saveResult.telegramSent) response += 'Notificacion enviada por Telegram\n';
+          if (saveResult.sheetRow) response += 'Registro guardado en Google Sheets\n';
+          response += '\nGracias por usar nuestro sistema!\nDesea registrar otra inasistencia?';
+          options = ['Si, registrar otra', 'No, gracias'];
+          delete conversations[sessionId];
+          res.json({ success: true, response: response, sessionId: sessionId, options: options, showUpload: showUpload, showSummary: showSummary, completed: completed, completedData: completedData });
+        });
+        return;
+      }
+      response = 'Desea registrar otra inasistencia?';
+      options = ['Si, registrar otra', 'No, gracias'];
+      delete conversations[sessionId];
+      break;
 
-        if (data.showUpload) {
-          addUploadArea();
-        }
-
-        if (data.completed) {
-          currentStep = 'completed';
-          addOptions(['Si, registrar otra', 'No, gracias']);
-        }
-      })
-      .catch(function(err) {
-        hideTyping();
-        addBotMessage('Error de conexion. Verifique su internet e intente de nuevo.');
-      })
-      .finally(function() {
-        setSending(false);
-        inputEl.focus();
-      });
+    default:
+      conversations[sessionId] = { step: 'welcome', data: {} };
+      response = 'Bienvenido de nuevo! Cual es el nombre completo del estudiante?';
   }
 
-  function sendFileToServer(file) {
-    if (isSending) return;
-    setSending(true);
-    showTyping();
+  res.json({ success: true, response: response, sessionId: sessionId, options: options, showUpload: showUpload, showSummary: showSummary, completed: completed, completedData: completedData });
+});
 
-    var body = new FormData();
-    body.append('sessionId', sessionId);
-    body.append('message', '');
-    body.append('certificate', file);
-
-    fetch('/api/chat', { method: 'POST', body: body })
-      .then(function(resp) { return resp.json(); })
-      .then(function(data) {
-        hideTyping();
-        if (!data.success) { addBotMessage('Error al subir archivo.'); return; }
-        addBotMessage(formatMsg(data.response));
-        if (data.options && data.options.length > 0) {
-          if (data.options.length === 12) addGradeOptions(data.options);
-          else addOptions(data.options);
-        }
-        if (data.showUpload) addUploadArea();
-        if (data.completed) { currentStep = 'completed'; addOptions(['Si, registrar otra', 'No, gracias']); }
-      })
-      .catch(function() {
-        hideTyping();
-        addBotMessage('Error de conexion al subir archivo.');
-      })
-      .finally(function() {
-        setSending(false);
-        inputEl.focus();
-      });
+function buildSummary(data) {
+  var s = 'RESUMEN DEL REGISTRO\n';
+  s += 'Estudiante: ' + data.studentName + '\n';
+  s += 'Grado: ' + data.grade + '\n';
+  s += 'Turno: ' + data.shift + '\n';
+  s += 'Seccion: ' + data.section + '\n';
+  if (data.hasCertificate) {
+    s += 'Certificado: Si - ' + (data.certificateFile ? data.certificateFile.originalname : 'adjunto') + '\n';
+  } else {
+    s += 'Certificado: No\nJustificacion: ' + data.justification + '\n';
   }
+  s += '\nTodo esta correcto? Presione Enviar para confirmar.';
+  return s;
+}
 
-  sendBtn.addEventListener('click', function() {
-    var text = inputEl.value.trim();
-    if (!text) return;
-    inputEl.value = '';
-    addUserMessage(text);
-    sendMessage(text);
-  });
+function saveSubmission(data, sessionId, callback) {
+  var result = { id: 'SUB-' + Date.now(), savedAt: new Date().toISOString(), telegramSent: false, sheetRow: null, driveFileId: null };
 
-  inputEl.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendBtn.click(); }
-  });
+  if (telegramBot && CONFIG.TELEGRAM_CHAT_ID) {
+    var msg = 'NUEVA INASISTENCIA REGISTRADA\n\n';
+    msg += 'Estudiante: ' + data.studentName + '\n';
+    msg += 'Grado: ' + data.grade + '\n';
+    msg += 'Turno: ' + data.shift + '\n';
+    msg += 'Seccion: ' + data.section + '\n';
+    msg += 'Certificado: ' + (data.hasCertificate ? 'Si' : 'No') + '\n';
+    if (data.hasCertificate && data.certificateFile) {
+      msg += 'Archivo: ' + data.certificateFile.originalname + '\n';
+    } else {
+      msg += 'Justificacion: ' + (data.justification || 'N/A') + '\n';
+    }
+    msg += 'Fecha: ' + new Date().toLocaleString('es-PY') + '\n';
+    msg += 'ID: ' + result.id;
 
-  attachBtn.addEventListener('click', function() { fileInput.click(); });
-  fileInput.addEventListener('change', function(e) { if (e.target.files[0]) handleFileSelected(e.target.files[0]); fileInput.value = ''; });
-  messagesEl.addEventListener('dragover', function(e) { e.preventDefault(); });
-  messagesEl.addEventListener('drop', function(e) { e.preventDefault(); if (e.dataTransfer.files[0]) handleFileSelected(e.dataTransfer.files[0]); });
+    telegramBot.sendMessage(CONFIG.TELEGRAM_CHAT_ID, msg).then(function() {
+      result.telegramSent = true;
+      if (data.certificateFile && data.certificateFile.path && fs.existsSync(data.certificateFile.path)) {
+        var isPdf = data.certificateFile.mimetype === 'application/pdf';
+        if (isPdf) {
+          telegramBot.sendDocument(CONFIG.TELEGRAM_CHAT_ID, data.certificateFile.path, { caption: 'Certificado de ' + data.studentName });
+        } else {
+          telegramBot.sendPhoto(CONFIG.TELEGRAM_CHAT_ID, data.certificateFile.path, { caption: 'Certificado de ' + data.studentName });
+        }
+      }
+      saveToSheet(data, result, callback);
+    }).catch(function() {
+      saveToSheet(data, result, callback);
+    });
+  } else {
+    saveToSheet(data, result, callback);
+  }
+}
 
-  addDateSeparator();
-  sendMessage('');
-})();
-</script>
-</body>
-</html>
+function saveToSheet(data, result, callback) {
+  if (sheets && CONFIG.SPREADSHEET_ID) {
+    var row = [
+      result.id,
+      new Date().toLocaleString('es-PY'),
+      data.studentName,
+      data.grade,
+      data.shift,
+      data.section,
+      data.hasCertificate ? (data.certificateFile ? data.certificateFile.originalname : 'Adjunto') : 'Sin certificado',
+      data.hasCertificate ? 'Con certificado' : 'Justificacion escrita',
+      data.hasCertificate ? '' : (data.justification || ''),
+      '',
+    ];
+    sheets.spreadsheets.values.append({
+      spreadsheetId: CONFIG.SPREADSHEET_ID,
+      range: "'" + CONFIG.SHEET_NAME + "'!A:J",
+      valueInputOption: 'USER_ENTERED',
+      resource: { values: [row] },
+    }).then(function() {
+      result.sheetRow = 'OK';
+      if (data.certificateFile && data.certificateFile.path && fs.existsSync(data.certificateFile.path)) {
+        result.driveFileId = 'local';
+      }
+      submissions.push({ id: result.id, data: data });
+      callback(result);
+    }).catch(function() {
+      if (data.certificateFile && data.certificateFile.path && fs.existsSync(data.certificateFile.path)) {
+        result.driveFileId = 'local';
+      }
+      submissions.push({ id: result.id, data: data });
+      callback(result);
+    });
+  } else {
+    if (data.certificateFile && data.certificateFile.path && fs.existsSync(data.certificateFile.path)) {
+      result.driveFileId = 'local';
+    }
+    submissions.push({ id: result.id, data: data });
+    callback(result);
+  }
+}
+
+app.listen(PORT, function() {
+  console.log('Esc. Basica N1281 - Katuete');
+  console.log('Servidor: http://localhost:' + PORT);
+  console.log('Sheets: ' + (CONFIG.SPREADSHEET_ID ? 'OK' : 'NO'));
+  console.log('Telegram: ' + (CONFIG.TELEGRAM_BOT_TOKEN ? 'OK' : 'NO'));
+});
