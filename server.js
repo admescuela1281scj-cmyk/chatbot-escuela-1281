@@ -16,8 +16,8 @@ var CONFIG = {
   TELEGRAM_CHAT_ID: process.env.TELEGRAM_CHAT_ID,
   MAX_FILE_SIZE: 10 * 1024 * 1024,
 };
-var GRADES = ['Pre-Jardin','Jardin','Preparatoria','1er Grado','2do Grado','3er Grado','4to Grado','5to Grado','6to Grado','7mo Grado','8vo Grado','9no Grado'];
-var SHIFTS = ['Manana', 'Tarde'];
+var GRADES = ['Pre-Jardin','Jardin','Pre-Escolar','1er Grado','2do Grado','3er Grado','4to Grado','5to Grado','6to Grado','7mo Grado','8vo Grado','9no Grado'];
+var SHIFTS = ['Mañana', 'Tarde'];
 var SECTIONS = ['A', 'B'];
 var auth = null;
 try {
