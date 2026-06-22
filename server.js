@@ -3,6 +3,7 @@ var express = require('express');
 var multer = require('multer');
 var path = require('path');
 var fs = require('fs');
+var https = require('https');
 var google = require('googleapis').google;
 var TelegramBot = require('node-telegram-bot-api');
 var app = express();
@@ -17,7 +18,6 @@ var CONFIG = {
 var GRADES = ['Pre-Jardin','Jardin','Preparatoria','1er Grado','2do Grado','3er Grado','4to Grado','5to Grado','6to Grado','7mo Grado','8vo Grado','9no Grado'];
 var SHIFTS = ['Manana', 'Tarde'];
 var SECTIONS = ['A', 'B'];
-var https = require('https');
 var auth = null;
 try {
   if (process.env.GOOGLE_CREDENTIALS_JSON) {
@@ -113,55 +113,44 @@ function buildSummary(data) {
 function saveSubmission(data, sessionId, callback) {
   var result = { id: 'SUB-' + Date.now(), telegramSent: false, sheetRow: null, fileLink: null };
   var driveUrl = 'https://script.google.com/macros/s/AKfycbwACA_antGDuuUvC7JcXko8sxu9HxeaOgocMDrBADhtjPjktIbD3AubJPnv8s5AyLHg/exec';
-
   if (telegramBot && CONFIG.TELEGRAM_CHAT_ID) {
     var msg = 'NUEVA INASISTENCIA REGISTRADA\n\nEstudiante: ' + data.studentName + '\nGrado: ' + data.grade + '\nTurno: ' + data.shift + '\nSeccion: ' + data.section + '\nCertificado: ' + (data.hasCertificate ? 'Si' : 'No') + '\n';
     if (data.hasCertificate && data.certificateFile) msg += 'Archivo: ' + data.certificateFile.originalname + '\n';
     else msg += 'Justificacion: ' + (data.justification || 'N/A') + '\n';
     msg += 'Fecha: ' + new Date().toLocaleString('es-PY') + '\nID: ' + result.id;
-
     telegramBot.sendMessage(CONFIG.TELEGRAM_CHAT_ID, msg).then(function() {
       result.telegramSent = true; console.log('Telegram OK');
       if (data.certificateFile && data.certificateFile.path && fs.existsSync(data.certificateFile.path)) {
-        var fileBuffer = fs.readFileSync(data.certificateFile.path);
-        var base64 = fileBuffer.toString('base64');
-        var postData = 'file=' + encodeURIComponent(base64) + '&fileName=' + encodeURIComponent(data.certificateFile.originalname) + '&mimeType=' + encodeURIComponent(data.certificateFile.mimetype);
-
-        var urlParts = require('url').parse(driveUrl);
-        var options = {
-          hostname: urlParts.hostname,
-          path: urlParts.path,
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(postData) }
-        };
-
-        var req = https.request(options, function(res) {
-          var responseData = '';
-          res.on('data', function(chunk) { responseData += chunk; });
-          res.on('end', function() {
-            try {
-              var json = JSON.parse(responseData);
-              if (json.success && json.url) {
-                result.fileLink = json.url;
-                console.log('Drive OK:', json.url);
-              }
-            } catch(e) { console.log('Drive parse error:', responseData); }
-            sendToTelegramAndSave(data, result, callback);
+        try {
+          var fileBuffer = fs.readFileSync(data.certificateFile.path);
+          var base64 = fileBuffer.toString('base64');
+          var postData = 'file=' + encodeURIComponent(base64) + '&fileName=' + encodeURIComponent(data.certificateFile.originalname) + '&mimeType=' + encodeURIComponent(data.certificateFile.mimetype);
+          var urlObj = new URL(driveUrl);
+          var options = { hostname: urlObj.hostname, path: urlObj.pathname + urlObj.search, method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(postData) } };
+          var req = https.request(options, function(res) {
+            var responseData = '';
+            res.on('data', function(chunk) { responseData += chunk; });
+            res.on('end', function() {
+              try {
+                var json = JSON.parse(responseData);
+                if (json.success && json.url) { result.fileLink = json.url; console.log('Drive OK:', json.url); }
+                else { console.log('Drive respuesta:', responseData); }
+              } catch(e) { console.log('Drive parse error:', responseData); }
+              sendToTelegramAndSave(data, result, callback);
+            });
           });
-        });
-        req.on('error', function(e) { console.log('Drive error:', e.message); sendToTelegramAndSave(data, result, callback); });
-        req.write(postData);
-        req.end();
+          req.on('error', function(e) { console.log('Drive error:', e.message); sendToTelegramAndSave(data, result, callback); });
+          req.write(postData); req.end();
+        } catch(e) { console.log('Drive error:', e.message); sendToTelegramAndSave(data, result, callback); }
       } else { sendToTelegramAndSave(data, result, callback); }
     }).catch(function(err) { console.log('Err Telegram:', err.message); sendToTelegramAndSave(data, result, callback); });
   } else { sendToTelegramAndSave(data, result, callback); }
 }
-
 function sendToTelegramAndSave(data, result, callback) {
   if (telegramBot && CONFIG.TELEGRAM_CHAT_ID && data.certificateFile && data.certificateFile.path && fs.existsSync(data.certificateFile.path)) {
     var isPdf = data.certificateFile.mimetype === 'application/pdf';
     var cap = 'Certificado de ' + data.studentName;
-    if (result.fileLink) cap += '\nLink: ' + result.fileLink;
+    if (result.fileLink) cap += '\nLink Drive: ' + result.fileLink;
     var p = isPdf ? telegramBot.sendDocument(CONFIG.TELEGRAM_CHAT_ID, data.certificateFile.path, { caption: cap }) : telegramBot.sendPhoto(CONFIG.TELEGRAM_CHAT_ID, data.certificateFile.path, { caption: cap });
     p.then(function() { saveToSheet(data, result, callback); }).catch(function() { saveToSheet(data, result, callback); });
   } else { saveToSheet(data, result, callback); }
