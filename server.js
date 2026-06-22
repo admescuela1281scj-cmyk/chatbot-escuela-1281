@@ -25,7 +25,7 @@ const GRADES = [
   '7mo Grado', '8vo Grado', '9no Grado'
 ];
 
-const SHIFTS = ['Manana', 'Tarde'];
+const SHIFTS = ['Mañana', 'Tarde'];
 const SECTIONS = ['A', 'B'];
 
 let auth;
