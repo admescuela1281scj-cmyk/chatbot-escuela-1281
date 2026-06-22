@@ -294,12 +294,14 @@ function uploadToHost(filePath, callback) {
     parts.push(fileBuffer);
     parts.push(Buffer.from('\r\n--' + boundary + '--\r\n'));
     var body = Buffer.concat(parts);
-    var options = { hostname: '0x0.st', path: '/', method: 'POST', headers: { 'Content-Type': 'multipart/form-data; boundary=' + boundary, 'Content-Length': body.length } };
+    hostname: 'telegra.ph', path: '/upload', method: 'POST', headers: { 'Content-Type': 'multipart/form-data; boundary=' + boundary, 'Content-Length': body.length } };
     var req = https.request(options, function(res) {
       var data = '';
       res.on('data', function(chunk) { data += chunk; });
       res.on('end', function() {
-        var url = data.trim();
+        var url = try { var json = JSON.parse(data); var url = json[0] ? 'https://telegra.ph' + json[0].src : null; } catch(e) { var url = null; }
+if (url) { console.log('Link:', url); callback(url); }
+else { console.log('Upload:', data); callback(null); };
         if (url.indexOf('https://') === 0) { console.log('Link:', url); callback(url); }
         else { console.log('Upload:', url); callback(null); }
       });
