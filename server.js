@@ -19,13 +19,13 @@ var CONFIG = {
 };
 
 var GRADES = [
-  'Pre-Jardín', 'Jardín', 'Preparatoria',
+  'Pre-Jardin', 'Jardin', 'Preparatoria',
   '1er Grado', '2do Grado', '3er Grado',
   '4to Grado', '5to Grado', '6to Grado',
   '7mo Grado', '8vo Grado', '9no Grado'
 ];
 
-var SHIFTS = ['Mañana', 'Tarde'];
+var SHIFTS = ['Manana', 'Tarde'];
 var SECTIONS = ['A', 'B'];
 
 var https = require('https');
@@ -39,13 +39,7 @@ try {
       credentials: creds,
       scopes: ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.file'],
     });
-    console.log('Google Auth desde variable de entorno OK');
-  } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-    auth = new google.auth.GoogleAuth({
-      keyFile: process.env.GOOGLE_APPLICATION_CREDENTIALS,
-      scopes: ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.file'],
-    });
-    console.log('Google Auth desde archivo OK');
+    console.log('Google Auth OK');
   } else {
     console.log('Google Auth NO configurado');
   }
@@ -54,20 +48,18 @@ try {
 }
 
 var sheets = auth ? google.sheets({ version: 'v4', auth }) : null;
-var drive = auth ? google.drive({ version: 'v3', auth }) : null;
 
 var telegramBot = null;
 try {
   if (CONFIG.TELEGRAM_BOT_TOKEN) {
     telegramBot = new TelegramBot(CONFIG.TELEGRAM_BOT_TOKEN, { polling: false });
-    console.log('Telegram Bot conectado');
+    console.log('Telegram OK');
   }
 } catch (e) {
   console.log('Error Telegram:', e.message);
 }
 
 var conversations = {};
-var submissions = [];
 
 var uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
@@ -124,17 +116,17 @@ app.post('/api/chat', upload.single('certificate'), function(req, res) {
   switch (conv.step) {
     case 'welcome':
       conv.step = 'name';
-      response = '¡Hola! 👋😊 Soy el asistente virtual de la **Escuela Básica N° 1281 Sagrado Corazón de Jesús — Katueté**.\n\nEstoy aquí para ayudarle a registrar la **inasistencia** de su hijo/a.\n\n📝 Solo necesito algunos datos y, si tiene un **certificado médico**, puede adjuntarlo directamente aquí.\n\n¿Cuál es el **nombre completo del estudiante**?';
+      response = 'Hola! Soy el asistente virtual de la Escuela Basica N 1281 Sagrado Corazon de Jesus - Katuete. Estoy aqui para ayudarle a registrar la inasistencia de su hijo/a. Solo necesito algunos datos y, si tiene un certificado medico, puede adjuntarlo directamente aqui. Cual es el nombre completo del estudiante?';
       break;
 
     case 'name':
       if (!text || text.split(/\s+/).filter(Boolean).length < 2) {
-        response = '😅 Necesito el **nombre y apellido** del estudiante.\n\n*Ejemplo: María López González*';
+        response = 'Necesito el nombre y apellido del estudiante. Ejemplo: Maria Lopez Gonzalez';
         break;
       }
       conv.data.studentName = text;
       conv.step = 'grade';
-      response = '¡Perfecto, **' + text + '**! 👍\n\nAhora seleccione el **grado** del estudiante:';
+      response = 'Perfecto, ' + text + '! Ahora seleccione el grado del estudiante:';
       options = GRADES;
       break;
 
@@ -146,13 +138,13 @@ app.post('/api/chat', upload.single('certificate'), function(req, res) {
         if (GRADES[g].toLowerCase() === text.toLowerCase()) { byName = GRADES[g]; break; }
       }
       if (!byIndex && !byName) {
-        response = 'Por favor seleccione un **grado válido** de la lista. 👆';
+        response = 'Por favor seleccione un grado valido de la lista.';
         options = GRADES;
         break;
       }
       conv.data.grade = byIndex ? GRADES[idx] : byName;
       conv.step = 'shift';
-      response = 'Grado: **' + conv.data.grade + '** ✅\n\nSeleccione el **turno**:';
+      response = 'Grado: ' + conv.data.grade + '. Seleccione el turno:';
       options = SHIFTS;
       break;
 
@@ -162,13 +154,13 @@ app.post('/api/chat', upload.single('certificate'), function(req, res) {
         if (SHIFTS[s].toLowerCase() === text.toLowerCase()) { validShift = SHIFTS[s]; break; }
       }
       if (!validShift) {
-        response = 'Seleccione un **turno válido**. 👆';
+        response = 'Seleccione un turno valido.';
         options = SHIFTS;
         break;
       }
       conv.data.shift = validShift;
       conv.step = 'section';
-      response = 'Turno: **' + validShift + '** ✅\n\nSeleccione la **sección**:';
+      response = 'Turno: ' + validShift + '. Seleccione la seccion:';
       options = SECTIONS;
       break;
 
@@ -178,55 +170,55 @@ app.post('/api/chat', upload.single('certificate'), function(req, res) {
         if (SECTIONS[sec].toLowerCase() === text.toLowerCase()) { validSec = SECTIONS[sec]; break; }
       }
       if (!validSec) {
-        response = 'Seleccione una **sección válida** (A o B). 👆';
+        response = 'Seleccione una seccion valida (A o B).';
         options = SECTIONS;
         break;
       }
       conv.data.section = validSec;
       conv.step = 'has_certificate';
-      response = 'Sección: **' + validSec + '** ✅\n\n🏥 ¿Cuenta con **certificado médico** para justificar la inasistencia?';
-      options = ['✅ Sí, tengo certificado', '❌ No, solo justificación'];
+      response = 'Seccion: ' + validSec + '. Cuenta con certificado medico para justificar la inasistencia?';
+      options = ['Si, tengo certificado', 'No, solo justificacion'];
       break;
 
     case 'has_certificate':
       var lower = text.toLowerCase();
-      var hasCert = lower.indexOf('sí') !== -1 || lower.indexOf('si') !== -1 || lower.indexOf('certificado') !== -1;
-      var noCert = lower.indexOf('no') !== -1 || lower.indexOf('justificación') !== -1 || lower.indexOf('justificacion') !== -1;
+      var hasCert = lower.indexOf('si') !== -1 || lower.indexOf('certificado') !== -1;
+      var noCert = lower.indexOf('no') !== -1 || lower.indexOf('justificacion') !== -1;
       if (!hasCert && !noCert) {
-        response = 'Por favor seleccione una opción: 👆';
-        options = ['✅ Sí, tengo certificado', '❌ No, solo justificación'];
+        response = 'Por favor seleccione una opcion:';
+        options = ['Si, tengo certificado', 'No, solo justificacion'];
         break;
       }
       if (hasCert) {
         conv.data.hasCertificate = true;
         conv.step = 'upload_certificate';
-        response = '📄 **Adjunte el certificado médico**\n\nPuede subir una **foto** o **PDF** del certificado.\n\n💡 *Use el botón 📎 de abajo para seleccionar el archivo.*';
+        response = 'Adjunte el certificado medico. Puede subir una foto o PDF del certificado. Use el boton de abajo para seleccionar el archivo.';
         showUpload = true;
       } else {
         conv.data.hasCertificate = false;
         conv.step = 'justification';
-        response = '📝 **Escriba la justificación de la inasistencia**\n\nPor favor indique el **motivo** por el cual el estudiante no asistió a clases.\n\n*Ejemplo: "El estudiante presentó fiebre y malestar general"*';
+        response = 'Escriba la justificacion de la inasistencia. Indique el motivo por el cual el estudiante no asistio a clases.';
       }
       break;
 
     case 'upload_certificate':
       if (!file && text) {
         if (conv.data.certificateFile) { conv.step = 'summary'; showSummary = true; response = buildSummary(conv.data); break; }
-        response = '📎 Por favor adjunte el **certificado médico** como archivo (foto o PDF).';
+        response = 'Por favor adjunte el certificado medico como archivo (foto o PDF).';
         showUpload = true; break;
       }
       if (!file) {
         if (conv.data.certificateFile) { conv.step = 'summary'; showSummary = true; response = buildSummary(conv.data); break; }
-        response = '📎 Esperando el **certificado médico**...';
+        response = 'Esperando el certificado medico...';
         showUpload = true; break;
       }
       conv.data.certificateFile = { filename: file.filename, originalname: file.originalname, mimetype: file.mimetype, size: file.size, path: file.path };
       conv.step = 'summary'; showSummary = true;
-      response = '✅ **¡Archivo recibido!** 📎 *' + file.originalname + '*\n\n' + buildSummary(conv.data);
+      response = 'Archivo recibido: ' + file.originalname + '\n\n' + buildSummary(conv.data);
       break;
 
     case 'justification':
-      if (!text || text.length < 10) { response = '📝 La justificación debe tener al menos **10 caracteres**.'; break; }
+      if (!text || text.length < 10) { response = 'La justificacion debe tener al menos 10 caracteres.'; break; }
       conv.data.justification = text; conv.step = 'summary'; showSummary = true;
       response = buildSummary(conv.data);
       break;
@@ -235,49 +227,46 @@ app.post('/api/chat', upload.single('certificate'), function(req, res) {
       if (conv.data.studentName) {
         saveSubmission(conv.data, sessionId, function(saveResult) {
           completed = true; completedData = saveResult;
-          response = '🎉 **¡Registro completado con éxito!**\n\n';
-          response += '👤 Estudiante: **' + conv.data.studentName + '**\n';
-          response += '📚 Grado: **' + conv.data.grade + '**\n';
-          response += '🕐 Turno: **' + conv.data.shift + '**\n';
-          response += '🔤 Sección: **' + conv.data.section + '**\n';
-          if (conv.data.hasCertificate) { response += '🏥 Certificado: **Sí**\n'; }
-          else { response += '📝 Justificación: *' + (conv.data.justification || '') + '*\n'; }
+          response = 'Registro completado con exito!\n\n';
+          response += 'Estudiante: ' + conv.data.studentName + '\n';
+          response += 'Grado: ' + conv.data.grade + '\n';
+          response += 'Turno: ' + conv.data.shift + '\n';
+          response += 'Seccion: ' + conv.data.section + '\n';
+          if (conv.data.hasCertificate) { response += 'Certificado: Si\n'; }
+          else { response += 'Justificacion: ' + (conv.data.justification || '') + '\n'; }
           response += '\n';
-          if (saveResult.telegramSent) response += '✅ Notificación enviada por Telegram\n';
-          if (saveResult.sheetRow) response += '✅ Registro guardado en Google Sheets\n';
-          if (saveResult.fileLink) response += '🔗 Link: ' + saveResult.fileLink + '\n';
-          response += '\n🙏 ¡Gracias!\n\n¿Desea registrar **otra inasistencia**?';
-          options = ['✅ Sí, registrar otra', '❌ No, gracias'];
+          if (saveResult.telegramSent) response += 'Notificacion enviada por Telegram\n';
+          if (saveResult.sheetRow) response += 'Registro guardado en Google Sheets\n';
+          if (saveResult.fileLink) response += 'Link: ' + saveResult.fileLink + '\n';
+          response += '\nGracias por usar nuestro sistema!\nDesea registrar otra inasistencia?';
+          options = ['Si, registrar otra', 'No, gracias'];
           delete conversations[sessionId];
           res.json({ success: true, response: response, sessionId: sessionId, options: options, showUpload: false, showSummary: false, completed: completed, completedData: completedData });
         });
         return;
       }
-      response = '¿Desea registrar otra inasistencia?';
-      options = ['✅ Sí, registrar otra', '❌ No, gracias'];
+      response = 'Desea registrar otra inasistencia?';
+      options = ['Si, registrar otra', 'No, gracias'];
       delete conversations[sessionId];
       break;
 
     default:
       conversations[sessionId] = { step: 'welcome', data: {} };
-      response = '¡Bienvenido de nuevo! 👋\n\n¿Cuál es el **nombre completo del estudiante**?';
+      response = 'Bienvenido de nuevo! Cual es el nombre completo del estudiante?';
   }
 
   res.json({ success: true, response: response, sessionId: sessionId, options: options, showUpload: showUpload, showSummary: showSummary, completed: completed, completedData: completedData });
 });
 
 function buildSummary(data) {
-  var s = '📋 **RESUMEN DEL REGISTRO**\n';
-  s += '━━━━━━━━━━━━━━━━━━━━━━━━\n';
-  s += '👤 **Estudiante:** ' + data.studentName + '\n';
-  s += '📚 **Grado:** ' + data.grade + '\n';
-  s += '🕐 **Turno:** ' + data.shift + '\n';
-  s += '🔤 **Sección:** ' + data.section + '\n';
-  s += '━━━━━━━━━━━━━━━━━━━━━━━━\n';
-  if (data.hasCertificate) { s += '🏥 **Certificado:** ✅ Sí\n'; }
-  else { s += '📝 **Certificado:** ❌ No\n💬 **Justificación:** *' + data.justification + '*\n'; }
-  s += '━━━━━━━━━━━━━━━━━━━━━━━━\n\n';
-  s += '✅ ¿Todo está correcto? **Presione el botón de abajo** para confirmar.';
+  var s = 'RESUMEN DEL REGISTRO\n';
+  s += 'Estudiante: ' + data.studentName + '\n';
+  s += 'Grado: ' + data.grade + '\n';
+  s += 'Turno: ' + data.shift + '\n';
+  s += 'Seccion: ' + data.section + '\n';
+  if (data.hasCertificate) { s += 'Certificado: Si\n'; }
+  else { s += 'Certificado: No\nJustificacion: ' + data.justification + '\n'; }
+  s += '\nTodo esta correcto? Presione el boton de abajo para confirmar.';
   return s;
 }
 
@@ -285,29 +274,44 @@ function uploadToHost(filePath, callback) {
   try {
     var fileBuffer = fs.readFileSync(filePath);
     var fileName = path.basename(filePath);
-    var ext = path.extname(filePath).toLowerCase();
-    var mimeTypes = {'.jpg':'image/jpeg','.jpeg':'image/jpeg','.png':'image/png','.gif':'image/gif','.pdf':'application/pdf'};
-    var mime = mimeTypes[ext] || 'application/octet-stream';
     var boundary = '----FB' + Date.now();
     var parts = [];
-    parts.push(Buffer.from('--' + boundary + '\r\nContent-Disposition: form-data; name="file"; filename="' + fileName + '"\r\nContent-Type: ' + mime + '\r\n\r\n'));
+    parts.push(Buffer.from('--' + boundary + '\r\nContent-Disposition: form-data; name="file"; filename="' + fileName + '"\r\nContent-Type: image/jpeg\r\n\r\n'));
     parts.push(fileBuffer);
     parts.push(Buffer.from('\r\n--' + boundary + '--\r\n'));
     var body = Buffer.concat(parts);
-    hostname: 'telegra.ph', path: '/upload', method: 'POST', headers: { 'Content-Type': 'multipart/form-data; boundary=' + boundary, 'Content-Length': body.length } };
+    var options = {
+      hostname: 'telegra.ph',
+      path: '/upload',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'multipart/form-data; boundary=' + boundary,
+        'Content-Length': body.length
+      }
+    };
     var req = https.request(options, function(res) {
       var data = '';
       res.on('data', function(chunk) { data += chunk; });
       res.on('end', function() {
-        var url = try { var json = JSON.parse(data); var url = json[0] ? 'https://telegra.ph' + json[0].src : null; } catch(e) { var url = null; }
-if (url) { console.log('Link:', url); callback(url); }
-else { console.log('Upload:', data); callback(null); };
-        if (url.indexOf('https://') === 0) { console.log('Link:', url); callback(url); }
-        else { console.log('Upload:', url); callback(null); }
+        try {
+          var json = JSON.parse(data);
+          if (json[0] && json[0].src) {
+            var url = 'https://telegra.ph' + json[0].src;
+            console.log('Link generado:', url);
+            callback(url);
+          } else {
+            console.log('Upload respuesta:', data);
+            callback(null);
+          }
+        } catch(e) {
+          console.log('Upload error:', data);
+          callback(null);
+        }
       });
     });
     req.on('error', function(e) { console.log('Err upload:', e.message); callback(null); });
-    req.write(body); req.end();
+    req.write(body);
+    req.end();
   } catch (e) { console.log('Err upload:', e.message); callback(null); }
 }
 
@@ -315,25 +319,26 @@ function saveSubmission(data, sessionId, callback) {
   var result = { id: 'SUB-' + Date.now(), savedAt: new Date().toISOString(), telegramSent: false, sheetRow: null, fileLink: null };
 
   if (telegramBot && CONFIG.TELEGRAM_CHAT_ID) {
-    var msg = '📋 *NUEVA INASISTENCIA REGISTRADA*\n\n';
-    msg += '👤 *Estudiante:* ' + data.studentName + '\n';
-    msg += '📚 *Grado:* ' + data.grade + '\n';
-    msg += '🕐 *Turno:* ' + data.shift + '\n';
-    msg += '🔤 *Sección:* ' + data.section + '\n';
-    msg += '🏥 *Certificado:* ' + (data.hasCertificate ? '✅ Sí' : '❌ No') + '\n';
-    if (data.hasCertificate && data.certificateFile) { msg += '📎 *Archivo:* ' + data.certificateFile.originalname + '\n'; }
-    else { msg += '💬 *Justificación:* ' + (data.justification || 'N/A') + '\n'; }
-    msg += '📅 *Fecha:* ' + new Date().toLocaleString('es-PY') + '\n';
-    msg += '🆔 *ID:* ' + result.id;
+    var msg = 'NUEVA INASISTENCIA REGISTRADA\n\n';
+    msg += 'Estudiante: ' + data.studentName + '\n';
+    msg += 'Grado: ' + data.grade + '\n';
+    msg += 'Turno: ' + data.shift + '\n';
+    msg += 'Seccion: ' + data.section + '\n';
+    msg += 'Certificado: ' + (data.hasCertificate ? 'Si' : 'No') + '\n';
+    if (data.hasCertificate && data.certificateFile) { msg += 'Archivo: ' + data.certificateFile.originalname + '\n'; }
+    else { msg += 'Justificacion: ' + (data.justification || 'N/A') + '\n'; }
+    msg += 'Fecha: ' + new Date().toLocaleString('es-PY') + '\n';
+    msg += 'ID: ' + result.id;
 
-    telegramBot.sendMessage(CONFIG.TELEGRAM_CHAT_ID, msg, { parse_mode: 'Markdown' }).then(function() {
+    telegramBot.sendMessage(CONFIG.TELEGRAM_CHAT_ID, msg).then(function() {
       result.telegramSent = true;
+      console.log('Telegram enviado OK');
       if (data.certificateFile && data.certificateFile.path && fs.existsSync(data.certificateFile.path)) {
         uploadToHost(data.certificateFile.path, function(link) {
           result.fileLink = link;
+          var caption = 'Certificado de ' + data.studentName;
+          if (link) caption += '\nLink: ' + link;
           var isPdf = data.certificateFile.mimetype === 'application/pdf';
-          var caption = '📄 Certificado de ' + data.studentName;
-          if (link) caption += '\n🔗 ' + link;
           var p = isPdf ? telegramBot.sendDocument(CONFIG.TELEGRAM_CHAT_ID, data.certificateFile.path, { caption: caption }) : telegramBot.sendPhoto(CONFIG.TELEGRAM_CHAT_ID, data.certificateFile.path, { caption: caption });
           p.then(function() { saveToSheet(data, result, callback); }).catch(function() { saveToSheet(data, result, callback); });
         });
@@ -346,14 +351,23 @@ function saveToSheet(data, result, callback) {
   if (sheets && CONFIG.SPREADSHEET_ID) {
     var certInfo = 'Sin certificado';
     if (data.hasCertificate) { certInfo = result.fileLink || (data.certificateFile ? data.certificateFile.originalname : 'Adjunto'); }
-    var row = [ result.id, new Date().toLocaleString('es-PY'), data.studentName, data.grade, data.shift, data.section, certInfo, data.hasCertificate ? 'Con certificado' : 'Justificación escrita', data.hasCertificate ? '' : (data.justification || ''), '' ];
-    sheets.spreadsheets.values.append({ spreadsheetId: CONFIG.SPREADSHEET_ID, range: "'" + CONFIG.SHEET_NAME + "'!A:J", valueInputOption: 'USER_ENTERED', resource: { values: [row] } }).then(function(resp) {
-      result.sheetRow = 'OK'; console.log('Sheets OK'); callback(result);
-    }).catch(function(err) { console.log('ERROR Sheets:', err.message); callback(result); });
+    var row = [ result.id, new Date().toLocaleString('es-PY'), data.studentName, data.grade, data.shift, data.section, certInfo, data.hasCertificate ? 'Con certificado' : 'Justificacion escrita', data.hasCertificate ? '' : (data.justification || ''), '' ];
+    sheets.spreadsheets.values.append({
+      spreadsheetId: CONFIG.SPREADSHEET_ID,
+      range: "'" + CONFIG.SHEET_NAME + "'!A:J",
+      valueInputOption: 'USER_ENTERED',
+      resource: { values: [row] }
+    }).then(function() {
+      result.sheetRow = 'OK';
+      console.log('Sheets OK');
+      callback(result);
+    }).catch(function(err) {
+      console.log('ERROR Sheets:', err.message);
+      callback(result);
+    });
   } else { callback(result); }
 }
 
 app.listen(PORT, function() {
-  console.log('Esc. Basica N1281 - Katuete');
-  console.log('Servidor: http://localhost:' + PORT);
+  console.log('Servidor iniciado en puerto ' + PORT);
 });
