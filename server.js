@@ -15,8 +15,8 @@ var CONFIG = {
   TELEGRAM_CHAT_ID: process.env.TELEGRAM_CHAT_ID,
   MAX_FILE_SIZE: 10 * 1024 * 1024,
 };
-var GRADES = ['Pre-Jardin','Jardin','Preparatoria','1er Grado','2do Grado','3er Grado','4to Grado','5to Grado','6to Grado','7mo Grado','8vo Grado','9no Grado'];
-var SHIFTS = ['Manana', 'Tarde'];
+var GRADES = ['Pre-Jardin','Jardin','Pre-Escolar','1er Grado','2do Grado','3er Grado','4to Grado','5to Grado','6to Grado','7mo Grado','8vo Grado','9no Grado'];
+var SHIFTS = ['Mañana', 'Tarde'];
 var SECTIONS = ['A', 'B'];
 var auth = null;
 try {
@@ -39,7 +39,6 @@ var upload = multer({ storage: storage, fileFilter: function(r, file, cb) { cb(n
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(uploadDir));
 app.get('/', function(r, res) { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 app.post('/api/chat', upload.single('certificate'), function(req, res) {
   var sessionId = req.body.sessionId || 'default';
@@ -112,7 +111,6 @@ function buildSummary(data) {
 }
 function saveSubmission(data, sessionId, callback) {
   var result = { id: 'SUB-' + Date.now(), telegramSent: false, sheetRow: null, fileLink: null };
-  var driveUrl = 'https://script.google.com/macros/s/AKfycbwACA_antGDuuUvC7JcXko8sxu9HxeaOgocMDrBADhtjPjktIbD3AubJPnv8s5AyLHg/exec';
   if (telegramBot && CONFIG.TELEGRAM_CHAT_ID) {
     var msg = 'NUEVA INASISTENCIA REGISTRADA\n\nEstudiante: ' + data.studentName + '\nGrado: ' + data.grade + '\nTurno: ' + data.shift + '\nSeccion: ' + data.section + '\nCertificado: ' + (data.hasCertificate ? 'Si' : 'No') + '\n';
     if (data.hasCertificate && data.certificateFile) msg += 'Archivo: ' + data.certificateFile.originalname + '\n';
@@ -121,38 +119,24 @@ function saveSubmission(data, sessionId, callback) {
     telegramBot.sendMessage(CONFIG.TELEGRAM_CHAT_ID, msg).then(function() {
       result.telegramSent = true; console.log('Telegram OK');
       if (data.certificateFile && data.certificateFile.path && fs.existsSync(data.certificateFile.path)) {
-        try {
-          var fileBuffer = fs.readFileSync(data.certificateFile.path);
-          var base64 = fileBuffer.toString('base64');
-          var postData = 'file=' + encodeURIComponent(base64) + '&fileName=' + encodeURIComponent(data.certificateFile.originalname) + '&mimeType=' + encodeURIComponent(data.certificateFile.mimetype);
-          var urlObj = new URL(driveUrl);
-          var options = { hostname: urlObj.hostname, path: urlObj.pathname + urlObj.search, method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(postData) } };
-          var req = https.request(options, function(res) {
-            var responseData = '';
-            res.on('data', function(chunk) { responseData += chunk; });
-            res.on('end', function() {
-              try {
-                var json = JSON.parse(responseData);
-                if (json.success && json.url) { result.fileLink = json.url; console.log('Drive OK:', json.url); }
-                else { console.log('Drive respuesta:', responseData); }
-              } catch(e) { console.log('Drive parse error:', responseData); }
-              sendToTelegramAndSave(data, result, callback);
-            });
-          });
-          req.on('error', function(e) { console.log('Drive error:', e.message); sendToTelegramAndSave(data, result, callback); });
-          req.write(postData); req.end();
-        } catch(e) { console.log('Drive error:', e.message); sendToTelegramAndSave(data, result, callback); }
-      } else { sendToTelegramAndSave(data, result, callback); }
-    }).catch(function(err) { console.log('Err Telegram:', err.message); sendToTelegramAndSave(data, result, callback); });
-  } else { sendToTelegramAndSave(data, result, callback); }
-}
-function sendToTelegramAndSave(data, result, callback) {
-  if (telegramBot && CONFIG.TELEGRAM_CHAT_ID && data.certificateFile && data.certificateFile.path && fs.existsSync(data.certificateFile.path)) {
-    var isPdf = data.certificateFile.mimetype === 'application/pdf';
-    var cap = 'Certificado de ' + data.studentName;
-    if (result.fileLink) cap += '\nLink Drive: ' + result.fileLink;
-    var p = isPdf ? telegramBot.sendDocument(CONFIG.TELEGRAM_CHAT_ID, data.certificateFile.path, { caption: cap }) : telegramBot.sendPhoto(CONFIG.TELEGRAM_CHAT_ID, data.certificateFile.path, { caption: cap });
-    p.then(function() { saveToSheet(data, result, callback); }).catch(function() { saveToSheet(data, result, callback); });
+        var isPdf = data.certificateFile.mimetype === 'application/pdf';
+        var p = isPdf ? telegramBot.sendDocument(CONFIG.TELEGRAM_CHAT_ID, data.certificateFile.path) : telegramBot.sendPhoto(CONFIG.TELEGRAM_CHAT_ID, data.certificateFile.path);
+        p.then(function(tgMsg) {
+          var fileId = null;
+          if (isPdf && tgMsg.document) fileId = tgMsg.document.file_id;
+          else if (!isPdf && tgMsg.photo && tgMsg.photo.length > 0) fileId = tgMsg.photo[tgMsg.photo.length - 1].file_id;
+          if (fileId) {
+            telegramBot.getFile(fileId).then(function(fi) {
+              if (fi && fi.file_path) {
+                result.fileLink = 'https://api.telegram.org/file/bot' + CONFIG.TELEGRAM_BOT_TOKEN + '/' + fi.file_path;
+                console.log('Link:', result.fileLink);
+              }
+              saveToSheet(data, result, callback);
+            }).catch(function() { saveToSheet(data, result, callback); });
+          } else { saveToSheet(data, result, callback); }
+        }).catch(function() { saveToSheet(data, result, callback); });
+      } else { saveToSheet(data, result, callback); }
+    }).catch(function(err) { console.log('Err Telegram:', err.message); saveToSheet(data, result, callback); });
   } else { saveToSheet(data, result, callback); }
 }
 function saveToSheet(data, result, callback) {
