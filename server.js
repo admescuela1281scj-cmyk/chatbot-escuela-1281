@@ -17,6 +17,7 @@ var CONFIG = {
 var GRADES = ['Pre-Jardin','Jardin','Preparatoria','1er Grado','2do Grado','3er Grado','4to Grado','5to Grado','6to Grado','7mo Grado','8vo Grado','9no Grado'];
 var SHIFTS = ['Manana', 'Tarde'];
 var SECTIONS = ['A', 'B'];
+var https = require('https');
 var auth = null;
 try {
   if (process.env.GOOGLE_CREDENTIALS_JSON) {
