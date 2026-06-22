@@ -269,26 +269,17 @@ function buildSummary(data) {
   s += '\nTodo esta correcto? Presione el boton de abajo para confirmar.';
   return s;
 }
-
 function uploadToHost(filePath, callback) {
   try {
-    var fileBuffer = fs.readFileSync(filePath);
     var fileName = path.basename(filePath);
-    var boundary = '----FB' + Date.now();
-    var parts = [];
-    parts.push(Buffer.from('--' + boundary + '\r\nContent-Disposition: form-data; name="file"; filename="' + fileName + '"\r\nContent-Type: image/jpeg\r\n\r\n'));
-    parts.push(fileBuffer);
-    parts.push(Buffer.from('\r\n--' + boundary + '--\r\n'));
-    var body = Buffer.concat(parts);
-    var options = {
-      hostname: 'telegra.ph',
-      path: '/upload',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'multipart/form-data; boundary=' + boundary,
-        'Content-Length': body.length
-      }
-    };
+    var url = 'https://chatbot-escuela-1281.onrender.com/uploads/' + fileName;
+    console.log('Link:', url);
+    callback(url);
+  } catch (e) {
+    console.log('Err:', e.message);
+    callback(null);
+  }
+};
     var req = https.request(options, function(res) {
       var data = '';
       res.on('data', function(chunk) { data += chunk; });
