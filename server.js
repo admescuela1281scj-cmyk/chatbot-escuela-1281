@@ -28,6 +28,9 @@ var GRADES = [
 var SHIFTS = ['Mañana', 'Tarde'];
 var SECTIONS = ['A', 'B'];
 
+var https = require('https');
+var http = require('http');
+
 var auth = null;
 try {
   if (process.env.GOOGLE_CREDENTIALS_JSON) {
@@ -52,6 +55,9 @@ try {
 
 var sheets = auth ? google.sheets({ version: 'v4', auth }) : null;
 var drive = auth ? google.drive({ version: 'v3', auth }) : null;
+
+console.log('sheets:', sheets ? 'OK' : 'NULL');
+console.log('SPREADSHEET_ID:', CONFIG.SPREADSHEET_ID);
 
 var telegramBot = null;
 try {
@@ -305,9 +311,85 @@ function buildSummary(data) {
   return s;
 }
 
+function uploadToHost(filePath, callback) {
+  var FormData = function() {
+    this.boundary = '----FormBoundary' + Date.now() + Math.random().toString(36).slice(2);
+    this.parts = [];
+  };
+  FormData.prototype.append = function(name, value, filename) {
+    this.parts.push({ name: name, value: value, filename: filename });
+  };
+  FormData.prototype.getBuffer = function() {
+    var buffers = [];
+    for (var i = 0; i < this.parts.length; i++) {
+      var p = this.parts[i];
+      buffers.push(Buffer.from('--' + this.boundary + '\r\n'));
+      if (p.filename) {
+        buffers.push(Buffer.from('Content-Disposition: form-data; name="' + p.name + '"; filename="' + p.filename + '"\r\nContent-Type: application/octet-stream\r\n\r\n'));
+        buffers.push(p.value);
+        buffers.push(Buffer.from('\r\n'));
+      } else {
+        buffers.push(Buffer.from('Content-Disposition: form-data; name="' + p.name + '"\r\n\r\n'));
+        buffers.push(Buffer.from(p.value));
+        buffers.push(Buffer.from('\r\n'));
+      }
+    }
+    buffers.push(Buffer.from('--' + this.boundary + '--\r\n'));
+    return Buffer.concat(buffers);
+  };
+  FormData.prototype.getHeaders = function() {
+    return { 'Content-Type': 'multipart/form-data; boundary=' + this.boundary };
+  };
+
+  try {
+    var fileBuffer = fs.readFileSync(filePath);
+    var fileName = path.basename(filePath);
+    var form = new FormData();
+    form.append('reqtype', 'fileupload');
+    form.append('fileToUpload', fileBuffer, fileName);
+    var body = form.getBuffer();
+    var headers = form.getHeaders();
+    headers['Content-Length'] = body.length;
+
+    var options = {
+      hostname: 'catbox.moe',
+      path: '/user/api.php',
+      method: 'POST',
+      headers: headers
+    };
+
+    var req = https.request(options, function(res) {
+      var data = '';
+      res.on('data', function(chunk) { data += chunk; });
+      res.on('end', function() {
+        if (data.indexOf('https://') !== -1 || data.indexOf('http://') !== -1) {
+          console.log('Link generado:', data.trim());
+          callback(data.trim());
+        } else {
+          console.log('Upload respuesta:', data);
+          callback(null);
+        }
+      });
+    });
+    req.on('error', function(e) {
+      console.log('Error upload:', e.message);
+      callback(null);
+    });
+    req.write(body);
+    req.end();
+  } catch (e) {
+    console.log('Error upload:', e.message);
+    callback(null);
+  }
+}
+
 function saveSubmission(data, sessionId, callback) {
   var result = { id: 'SUB-' + Date.now(), savedAt: new Date().toISOString(), telegramSent: false, sheetRow: null, driveFileId: null };
 
+  console.log('Guardando submission:', result.id);
+  console.log('Datos:', JSON.stringify({name: data.studentName, grade: data.grade, shift: data.shift, section: data.section, hasCert: data.hasCertificate}));
+
+  // Telegram
   if (telegramBot && CONFIG.TELEGRAM_CHAT_ID) {
     var msg = '📋 *NUEVA INASISTENCIA REGISTRADA*\n\n';
     msg += '👤 *Estudiante:* ' + data.studentName + '\n';
@@ -325,26 +407,39 @@ function saveSubmission(data, sessionId, callback) {
 
     telegramBot.sendMessage(CONFIG.TELEGRAM_CHAT_ID, msg, { parse_mode: 'Markdown' }).then(function() {
       result.telegramSent = true;
+      console.log('Telegram enviado OK');
       if (data.certificateFile && data.certificateFile.path && fs.existsSync(data.certificateFile.path)) {
-        var isPdf = data.certificateFile.mimetype === 'application/pdf';
-        if (isPdf) {
-          telegramBot.sendDocument(CONFIG.TELEGRAM_CHAT_ID, data.certificateFile.path, { caption: '📄 Certificado de ' + data.studentName });
-        } else {
-          telegramBot.sendPhoto(CONFIG.TELEGRAM_CHAT_ID, data.certificateFile.path, { caption: '📄 Certificado de ' + data.studentName });
-        }
+        uploadToHost(data.certificateFile.path, function(link) {
+          result.fileLink = link;
+          if (link) {
+            var isPdf = data.certificateFile.mimetype === 'application/pdf';
+            if (isPdf) {
+              telegramBot.sendDocument(CONFIG.TELEGRAM_CHAT_ID, data.certificateFile.path, { caption: '📄 Certificado de ' + data.studentName + '\n🔗 ' + link });
+            } else {
+              telegramBot.sendPhoto(CONFIG.TELEGRAM_CHAT_ID, data.certificateFile.path, { caption: '📄 Certificado de ' + data.studentName + '\n🔗 ' + link });
+            }
+          }
+          saveToSheet(data, result, callback);
+        });
+      } else {
+        saveToSheet(data, result, callback);
       }
-      saveToSheet(data, result, callback);
     }).catch(function(err) {
       console.log('Error Telegram:', err.message);
       saveToSheet(data, result, callback);
     });
   } else {
+    console.log('Telegram no configurado');
     saveToSheet(data, result, callback);
   }
 }
 
 function saveToSheet(data, result, callback) {
   if (sheets && CONFIG.SPREADSHEET_ID) {
+    var certInfo = 'Sin certificado';
+    if (data.hasCertificate) {
+      certInfo = result.fileLink || (data.certificateFile ? data.certificateFile.originalname : 'Adjunto');
+    }
     var row = [
       result.id,
       new Date().toLocaleString('es-PY'),
@@ -352,11 +447,12 @@ function saveToSheet(data, result, callback) {
       data.grade,
       data.shift,
       data.section,
-      data.hasCertificate ? (data.certificateFile ? data.certificateFile.originalname : 'Adjunto') : 'Sin certificado',
+      certInfo,
       data.hasCertificate ? 'Con certificado' : 'Justificación escrita',
       data.hasCertificate ? '' : (data.justification || ''),
       '',
     ];
+    console.log('Guardando en Sheets:', CONFIG.SPREADSHEET_ID, CONFIG.SHEET_NAME);
     sheets.spreadsheets.values.append({
       spreadsheetId: CONFIG.SPREADSHEET_ID,
       range: "'" + CONFIG.SHEET_NAME + "'!A:J",
@@ -364,20 +460,25 @@ function saveToSheet(data, result, callback) {
       resource: { values: [row] },
     }).then(function(resp) {
       result.sheetRow = 'OK';
-      console.log('Sheets OK');
+      console.log('Sheets OK - filas actualizadas:', resp.data.updates ? resp.data.updates.updatedRows : 'N/A');
       callback(result);
     }).catch(function(err) {
       console.log('ERROR Sheets:', err.message);
       callback(result);
     });
   } else {
+    console.log('Sheets no configurado. sheets:', !!sheets, 'SPREADSHEET_ID:', CONFIG.SPREADSHEET_ID);
     callback(result);
   }
 }
 
 app.listen(PORT, function() {
-  console.log('Esc. Basica N1281 - Katuete');
-  console.log('Servidor: http://localhost:' + PORT);
-  console.log('Sheets: ' + (sheets ? 'OK' : 'NO'));
-  console.log('Telegram: ' + (telegramBot ? 'OK' : 'NO'));
+  console.log('');
+  console.log('========================================');
+  console.log('  Esc. Basica N° 1281 - Katueté');
+  console.log('  Servidor: http://localhost:' + PORT);
+  console.log('  Sheets: ' + (CONFIG.SPREADSHEET_ID ? 'OK' : 'NO'));
+  console.log('  Telegram: ' + (CONFIG.TELEGRAM_BOT_TOKEN ? 'OK' : 'NO'));
+  console.log('========================================');
+  console.log('');
 });
