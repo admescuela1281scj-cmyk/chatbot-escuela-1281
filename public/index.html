@@ -1,352 +1,120 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Escuela Basica N 1281 - Registro de Inasistencia</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0a4d3c, #1a8a5e); display: flex; align-items: center; justify-content: center; padding: 16px; }
-    .chat-container { width: 100%; max-width: 480px; height: 96vh; max-height: 780px; background: #fff; border-radius: 24px; box-shadow: 0 25px 80px rgba(0,0,0,.35); display: flex; flex-direction: column; overflow: hidden; }
-    .chat-header { background: linear-gradient(135deg, #0d5e44, #1a8a5e); color: #fff; padding: 18px 20px; display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
-    .header-avatar { width: 52px; height: 52px; border-radius: 50%; background: #fff; overflow: hidden; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
-    .header-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-    .header-info h1 { font-size: 16px; font-weight: 700; line-height: 1.2; }
-    .header-info p { font-size: 12px; opacity: .85; margin-top: 2px; }
-    .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #4ade80; margin-right: 4px; animation: pulse 2s infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
-    .chat-messages { flex: 1; overflow-y: auto; padding: 20px 16px; display: flex; flex-direction: column; gap: 10px; background: #f0f2f5; scroll-behavior: smooth; }
-    .message { display: flex; gap: 8px; max-width: 88%; animation: msgIn .35s cubic-bezier(.4,0,.2,1) both; }
-    @keyframes msgIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-    .message.bot { align-self: flex-start; }
-    .message.user { align-self: flex-end; flex-direction: row-reverse; }
-    .msg-avatar { width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-top: 2px; }
-    .msg-avatar.bot-avatar { background: #fff; box-shadow: 0 2px 6px rgba(26,138,94,.3); overflow: hidden; }
-    .msg-avatar.bot-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-    .msg-avatar.user-avatar { background: linear-gradient(135deg, #6366f1, #8b5cf6); font-size: 14px; color: #fff; font-weight: 600; }
-    .msg-bubble { padding: 12px 16px; border-radius: 18px; font-size: 14.5px; line-height: 1.55; word-wrap: break-word; }
-    .msg-bubble strong { font-weight: 700; }
-    .msg-bubble em { font-style: italic; opacity: .85; }
-    .message.bot .msg-bubble { background: #fff; color: #1a1a2e; border-bottom-left-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
-    .message.user .msg-bubble { background: linear-gradient(135deg, #0d5e44, #1a8a5e); color: #fff; border-bottom-right-radius: 6px; }
-    .msg-time { font-size: 10.5px; opacity: .5; margin-top: 4px; display: block; }
-    .message.user .msg-time { text-align: right; }
-    .options-wrap { margin-top: 12px; }
-    .options-grid { display: flex; flex-wrap: wrap; gap: 8px; }
-    .option-btn { background: #fff; border: 2px solid #1a8a5e; color: #0d5e44; padding: 10px 18px; border-radius: 22px; font-size: 13.5px; font-weight: 600; cursor: pointer; transition: all .2s; font-family: inherit; text-align: center; }
-    .option-btn:hover { background: #1a8a5e; color: #fff; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(26,138,94,.25); }
-    .option-btn:active { transform: scale(.97); }
-    .grade-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 10px; }
-    .grade-btn { background: #fff; border: 2px solid #d1d5db; color: #374151; padding: 10px 6px; border-radius: 12px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s; font-family: inherit; text-align: center; }
-    .grade-btn:hover { background: #1a8a5e; color: #fff; border-color: #1a8a5e; transform: scale(1.05); }
-    .upload-area { margin-top: 12px; border: 2px dashed #1a8a5e; border-radius: 16px; padding: 24px 16px; text-align: center; background: rgba(26,138,94,.04); cursor: pointer; transition: all .2s; }
-    .upload-area:hover { background: rgba(26,138,94,.1); border-color: #0d5e44; }
-    .upload-area .icon { font-size: 36px; margin-bottom: 8px; }
-    .upload-area .label { font-size: 14px; font-weight: 600; color: #0d5e44; }
-    .upload-area .hint { font-size: 12px; color: #6b7280; margin-top: 4px; }
-    .upload-area input { display: none; }
-    .typing-indicator { display: flex; gap: 5px; padding: 14px 20px; }
-    .typing-indicator span { width: 8px; height: 8px; background: #94a3b8; border-radius: 50%; animation: typing 1.4s infinite; }
-    .typing-indicator span:nth-child(2) { animation-delay: .2s; }
-    .typing-indicator span:nth-child(3) { animation-delay: .4s; }
-    @keyframes typing { 0%, 100% { opacity: .3; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-4px); } }
-    .chat-input-area { padding: 12px 16px; background: #fff; border-top: 1px solid #e5e7eb; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-    .chat-input-area.hidden { display: none; }
-    .confirm-btn { width: 100%; padding: 14px 24px; background: linear-gradient(135deg, #0d5e44, #1a8a5e); color: #fff; border: none; border-radius: 16px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 12px; font-family: inherit; transition: all .2s; box-shadow: 0 4px 12px rgba(26,138,94,.3); }
-    .confirm-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(26,138,94,.4); }
-    .confirm-btn:active { transform: scale(.98); }
-    .attach-btn { width: 42px; height: 42px; border-radius: 50%; border: none; background: #f3f4f6; color: #4b5563; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s; flex-shrink: 0; }
-    .attach-btn:hover { background: #e5e7eb; color: #1a8a5e; }
-    .input-wrapper { flex: 1; }
-    .chat-input { width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 22px; font-size: 14.5px; font-family: inherit; outline: none; transition: border-color .2s; background: #f9fafb; }
-    .chat-input:focus { border-color: #1a8a5e; background: #fff; }
-    .chat-input::placeholder { color: #9ca3af; }
-    .send-btn { width: 42px; height: 42px; border-radius: 50%; border: none; background: linear-gradient(135deg, #0d5e44, #1a8a5e); color: #fff; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .2s; flex-shrink: 0; box-shadow: 0 2px 8px rgba(26,138,94,.25); }
-    .send-btn:hover { transform: scale(1.08); }
-    .send-btn:active { transform: scale(.95); }
-    .send-btn:disabled { opacity: .4; cursor: default; transform: none; }
-    #fileInput { display: none; }
-    .date-sep { text-align: center; font-size: 11.5px; color: #64748b; margin: 6px 0; font-weight: 500; }
-    .date-sep span { background: #e2e8f0; padding: 4px 14px; border-radius: 10px; }
-    @media (max-width: 520px) { html, body { padding: 0; } .chat-container { height: 100vh; max-height: 100vh; border-radius: 0; } }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escuela 1281</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Inter',sans-serif;background:linear-gradient(135deg,#0a4d3c,#1a8a5e);display:flex;align-items:center;justify-content:center;padding:16px}
+.c{width:100%;max-width:480px;height:96vh;max-height:780px;background:#fff;border-radius:24px;box-shadow:0 25px 80px rgba(0,0,0,.35);display:flex;flex-direction:column;overflow:hidden}
+.h{background:linear-gradient(135deg,#0d5e44,#1a8a5e);color:#fff;padding:18px 20px;display:flex;align-items:center;gap:14px;flex-shrink:0}
+.ha{width:52px;height:52px;border-radius:50%;background:#fff;overflow:hidden;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.ha img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.hi h1{font-size:16px;font-weight:700;line-height:1.2}
+.hi p{font-size:12px;opacity:.85;margin-top:2px}
+.sd{display:inline-block;width:8px;height:8px;border-radius:50%;background:#4ade80;margin-right:4px;animation:p 2s infinite}
+@keyframes p{0%,100%{opacity:1}50%{opacity:.4}}
+.m{flex:1;overflow-y:auto;padding:20px 16px;display:flex;flex-direction:column;gap:10px;background:#f0f2f5;scroll-behavior:smooth}
+.msg{display:flex;gap:8px;max-width:88%;animation:mi .35s cubic-bezier(.4,0,.2,1) both}
+@keyframes mi{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.msg.b{align-self:flex-start}
+.msg.u{align-self:flex-end;flex-direction:row-reverse}
+.av{width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:2px}
+.av.bi{background:#fff;box-shadow:0 2px 6px rgba(26,138,94,.3);overflow:hidden}
+.av.bi img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.av.ui{background:linear-gradient(135deg,#6366f1,#8b5cf6);font-size:14px;color:#fff;font-weight:600}
+.bb{padding:12px 16px;border-radius:18px;font-size:14.5px;line-height:1.55;word-wrap:break-word}
+.bb strong{font-weight:700}
+.bb em{font-style:italic;opacity:.85}
+.msg.b .bb{background:#fff;color:#1a1a2e;border-bottom-left-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.msg.u .bb{background:linear-gradient(135deg,#0d5e44,#1a8a5e);color:#fff;border-bottom-right-radius:6px}
+.mt{font-size:10.5px;opacity:.5;margin-top:4px;display:block}
+.msg.u .mt{text-align:right}
+.ow{margin-top:12px}
+.og{display:flex;flex-wrap:wrap;gap:8px}
+.ob{background:#fff;border:2px solid #1a8a5e;color:#0d5e44;padding:10px 18px;border-radius:22px;font-size:13.5px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit;text-align:center}
+.ob:hover{background:#1a8a5e;color:#fff;transform:translateY(-2px)}
+.gg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+.gb{background:#fff;border:2px solid #d1d5db;color:#374151;padding:10px 6px;border-radius:12px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit;text-align:center}
+.gb:hover{background:#1a8a5e;color:#fff;border-color:#1a8a5e;transform:scale(1.05)}
+.ua{margin-top:12px;border:2px dashed #1a8a5e;border-radius:16px;padding:24px 16px;text-align:center;background:rgba(26,138,94,.04);cursor:pointer;transition:all .2s}
+.ua:hover{background:rgba(26,138,94,.1)}
+.ua .ic{font-size:36px;margin-bottom:8px}
+.ua .lb{font-size:14px;font-weight:600;color:#0d5e44}
+.ua .hn{font-size:12px;color:#6b7280;margin-top:4px}
+.ua input{display:none}
+.cf{width:100%;padding:16px 24px;background:linear-gradient(135deg,#0d5e44,#1a8a5e);color:#fff;border:none;border-radius:16px;font-size:16px;font-weight:700;cursor:pointer;margin-top:12px;font-family:inherit;transition:all .2s;box-shadow:0 4px 12px rgba(26,138,94,.3);display:block}
+.cf:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(26,138,94,.4)}
+.ti{display:flex;gap:5px;padding:14px 20px}
+.ti span{width:8px;height:8px;background:#94a3b8;border-radius:50%;animation:t 1.4s infinite}
+.ti span:nth-child(2){animation-delay:.2s}
+.ti span:nth-child(3){animation-delay:.4s}
+@keyframes t{0%,100%{opacity:.3;transform:translateY(0)}50%{opacity:1;transform:translateY(-4px)}}
+.ia{padding:12px 16px;background:#fff;border-top:1px solid #e5e7eb;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.ia.hid{display:none}
+.ab{width:42px;height:42px;border-radius:50%;border:none;background:#f3f4f6;color:#4b5563;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ab:hover{background:#e5e7eb;color:#1a8a5e}
+.iw{flex:1}
+.ci{width:100%;padding:12px 16px;border:2px solid #e5e7eb;border-radius:22px;font-size:14.5px;font-family:inherit;outline:none;background:#f9fafb}
+.ci:focus{border-color:#1a8a5e;background:#fff}
+.sb{width:42px;height:42px;border-radius:50%;border:none;background:linear-gradient(135deg,#0d5e44,#1a8a5e);color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px rgba(26,138,94,.25)}
+.sb:hover{transform:scale(1.08)}
+.sb:disabled{opacity:.4;cursor:default;transform:none}
+#fi{display:none}
+.ds{text-align:center;font-size:11.5px;color:#64748b;margin:6px 0;font-weight:500}
+.ds span{background:#e2e8f0;padding:4px 14px;border-radius:10px}
+@media(max-width:520px){html,body{padding:0}.c{height:100vh;max-height:100vh;border-radius:0}}
+</style>
 </head>
 <body>
-<div class="chat-container">
-  <div class="chat-header">
-    <div class="header-avatar"><img src="logo-bethel.jpeg" alt="Escuela 1281"></div>
-    <div class="header-info">
-      <h1>Escuela Basica N 1281</h1>
-      <p><span class="status-dot"></span>Sagrado Corazon de Jesus - Katuete</p>
-    </div>
-  </div>
-  <div class="chat-messages" id="chatMessages"></div>
-  <div class="chat-input-area" id="chatInputArea">
-    <button class="attach-btn" id="attachBtn" title="Adjuntar">📎</button>
-    <div class="input-wrapper"><input type="text" class="chat-input" id="chatInput" placeholder="Escriba su mensaje..." autocomplete="off"></div>
-    <button class="send-btn" id="sendBtn" title="Enviar"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
-  </div>
-  <input type="file" id="fileInput" accept="image/*,.pdf">
+<div class="c">
+<div class="h">
+<div class="ha"><img src="logo-bethel.jpeg" alt="Escuela 1281"></div>
+<div class="hi"><h1>Escuela Básica N° 1281</h1><p><span class="sd"></span>Sagrado Corazón de Jesús - Katueté</p></div>
 </div>
-
+<div class="m" id="msgs"></div>
+<div class="ia" id="ia">
+<button class="ab" id="ab" title="Adjuntar">📎</button>
+<div class="iw"><input type="text" class="ci" id="ci" placeholder="Escriba su mensaje..." autocomplete="off"></div>
+<button class="sb" id="sb" title="Enviar"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+</div>
+<input type="file" id="fi" accept="image/*,.pdf">
+</div>
 <script>
-(function() {
-  'use strict';
-
-  var sessionId = 's-' + Date.now() + '-' + Math.random().toString(36).slice(2,8);
-  var isSending = false;
-  var pendingFile = null;
-  var currentStep = 'init';
-
-  var messagesEl = document.getElementById('chatMessages');
-  var inputEl = document.getElementById('chatInput');
-  var sendBtn = document.getElementById('sendBtn');
-  var attachBtn = document.getElementById('attachBtn');
-  var fileInput = document.getElementById('fileInput');
-  var inputArea = document.getElementById('chatInputArea');
-
-  var LOGO_URL = 'logo-bethel.jpeg';
-
-  function timeStr() { return new Date().toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' }); }
-  function escapeHtml(t) { var d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
-  function formatMsg(t) { return t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(.+?)\*/g, '<em>$1</em>').replace(/\n/g, '<br>'); }
-  function scrollToBottom() { requestAnimationFrame(function() { messagesEl.scrollTop = messagesEl.scrollHeight; }); }
-  function setSending(v) { isSending = v; sendBtn.disabled = v; inputEl.disabled = v; }
-
-  function showTyping() {
-    var el = document.createElement('div');
-    el.className = 'message bot';
-    el.id = 'typing';
-    el.innerHTML = '<div class="msg-avatar bot-avatar"><img src="' + LOGO_URL + '" alt=""></div><div><div class="msg-bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div></div>';
-    messagesEl.appendChild(el);
-    scrollToBottom();
-  }
-  function hideTyping() { var el = document.getElementById('typing'); if (el) el.remove(); }
-
-  function addMessage(type, content) {
-    var msg = document.createElement('div');
-    msg.className = 'message ' + type;
-    var avatar = type === 'bot'
-      ? '<div class="msg-avatar bot-avatar"><img src="' + LOGO_URL + '" alt=""></div>'
-      : '<div class="msg-avatar user-avatar">👤</div>';
-    msg.innerHTML = avatar + '<div><div class="msg-bubble">' + content + '</div><span class="msg-time">' + timeStr() + '</span></div>';
-    messagesEl.appendChild(msg);
-    scrollToBottom();
-    return msg;
-  }
-
-  function addUserMessage(t) { addMessage('user', '<span>' + escapeHtml(t) + '</span>'); }
-  function addBotMessage(html) { return addMessage('bot', html); }
-
-  function addDateSeparator() {
-    var el = document.createElement('div');
-    el.className = 'date-sep';
-    el.innerHTML = '<span>' + new Date().toLocaleDateString('es-PY', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + '</span>';
-    messagesEl.appendChild(el);
-  }
-
-  function addOptions(options) {
-    if (!options || !options.length) return;
-    var wrap = document.createElement('div');
-    wrap.className = 'options-wrap';
-    var grid = document.createElement('div');
-    grid.className = 'options-grid';
-    for (var i = 0; i < options.length; i++) {
-      var btn = document.createElement('button');
-      btn.className = 'option-btn';
-      btn.textContent = options[i];
-      btn.setAttribute('data-value', options[i]);
-      btn.addEventListener('click', function() { sendOption(this.getAttribute('data-value')); });
-      grid.appendChild(btn);
-    }
-    wrap.appendChild(grid);
-    messagesEl.appendChild(wrap);
-    scrollToBottom();
-  }
-
-  function addGradeOptions(options) {
-    var wrap = document.createElement('div');
-    wrap.className = 'options-wrap';
-    var grid = document.createElement('div');
-    grid.className = 'grade-grid';
-    for (var i = 0; i < options.length; i++) {
-      var btn = document.createElement('button');
-      btn.className = 'grade-btn';
-      btn.textContent = options[i];
-      btn.setAttribute('data-index', String(i + 1));
-      btn.addEventListener('click', function() { sendOption(this.getAttribute('data-index')); });
-      grid.appendChild(btn);
-    }
-    wrap.appendChild(grid);
-    messagesEl.appendChild(wrap);
-    scrollToBottom();
-  }
-
-  function addConfirmButton() {
-    var wrap = document.createElement('div');
-    wrap.className = 'options-wrap';
-    var btn = document.createElement('button');
-    btn.className = 'confirm-btn';
-    btn.textContent = '✅ CONFIRMAR REGISTRO';
-    btn.addEventListener('click', function() {
-      btn.disabled = true;
-      btn.textContent = 'Guardando...';
-      btn.style.opacity = '.7';
-      sendMessage('confirmar');
-    });
-    wrap.appendChild(btn);
-    messagesEl.appendChild(wrap);
-    scrollToBottom();
-  }
-
-  function addUploadArea() {
-    var area = document.createElement('div');
-    area.className = 'upload-area';
-    area.innerHTML = '<div class="icon">📤</div><div class="label">Toque aqui para adjuntar</div><div class="hint">o arrastre su archivo (JPG, PNG, PDF)</div><input type="file" accept="image/*,.pdf" id="inlineFileInput">';
-    messagesEl.appendChild(area);
-    scrollToBottom();
-    var inlineInput = area.querySelector('#inlineFileInput');
-    area.addEventListener('click', function() { inlineInput.click(); });
-    inlineInput.addEventListener('change', function(e) { if (e.target.files[0]) handleFileSelected(e.target.files[0]); });
-    area.addEventListener('dragover', function(e) { e.preventDefault(); area.style.background = 'rgba(26,138,94,.1)'; });
-    area.addEventListener('dragleave', function() { area.style.background = 'rgba(26,138,94,.04)'; });
-    area.addEventListener('drop', function(e) { e.preventDefault(); area.style.background = 'rgba(26,138,94,.04)'; if (e.dataTransfer.files[0]) handleFileSelected(e.dataTransfer.files[0]); });
-  }
-
-  function handleFileSelected(file) {
-    var allowed = ['image/jpeg','image/png','image/webp','image/gif','application/pdf'];
-    if (allowed.indexOf(file.type) === -1) { addBotMessage('Formato no aceptado. Use JPG, PNG o PDF.'); return; }
-    if (file.size > 10 * 1024 * 1024) { addBotMessage('El archivo excede 10 MB.'); return; }
-    if (currentStep === 'upload_certificate') {
-      addUserMessage('📎 ' + file.name);
-      sendFileToServer(file);
-    } else {
-      addBotMessage('📎 "' + file.name + '" guardado. Lo usare cuando lleguemos al paso del certificado.');
-    }
-  }
-
-  function sendOption(text) {
-    var btns = document.querySelectorAll('.option-btn, .grade-btn');
-    for (var i = 0; i < btns.length; i++) { btns[i].disabled = true; btns[i].style.opacity = '.5'; btns[i].style.cursor = 'default'; }
-
-    if (text.indexOf('registrar otra') !== -1 || text.indexOf('Si, registrar') !== -1) {
-      sessionId = 's-' + Date.now() + '-' + Math.random().toString(36).slice(2,8);
-      currentStep = 'init';
-      sendMessage('');
-      return;
-    }
-    if (text.indexOf('No, gracias') !== -1) {
-      addBotMessage('Gracias por usar nuestro sistema! Que tenga un excelente dia. 🌟<br><br>Si necesita registrar otra inasistencia, recargue la pagina.');
-      inputArea.classList.add('hidden');
-      return;
-    }
-
-    addUserMessage(text);
-    sendMessage(text);
-  }
-
-  function sendMessage(text) {
-    if (isSending) return;
-    setSending(true);
-    showTyping();
-
-    var body = new FormData();
-    body.append('sessionId', sessionId);
-    body.append('message', text || '');
-
-    fetch('/api/chat', { method: 'POST', body: body })
-      .then(function(resp) { return resp.json(); })
-      .then(function(data) {
-        hideTyping();
-        if (!data.success) { addBotMessage('Error. Intente de nuevo.'); return; }
-
-        addBotMessage(formatMsg(data.response));
-
-        if (data.options && data.options.length > 0) {
-          if (data.options.length === 12) {
-            addGradeOptions(data.options);
-          } else {
-            addOptions(data.options);
-          }
-        }
-
-        if (data.showUpload) {
-          addUploadArea();
-        }
-
-        if (data.showSummary) {
-          addConfirmButton();
-        }
-
-        if (data.completed) {
-          currentStep = 'completed';
-          addOptions(['Si, registrar otra', 'No, gracias']);
-        }
-      })
-      .catch(function() {
-        hideTyping();
-        addBotMessage('Error de conexion. Verifique su internet e intente de nuevo.');
-      })
-      .finally(function() {
-        setSending(false);
-        inputEl.focus();
-      });
-  }
-
-  function sendFileToServer(file) {
-    if (isSending) return;
-    setSending(true);
-    showTyping();
-
-    var body = new FormData();
-    body.append('sessionId', sessionId);
-    body.append('message', '');
-    body.append('certificate', file);
-
-    fetch('/api/chat', { method: 'POST', body: body })
-      .then(function(resp) { return resp.json(); })
-      .then(function(data) {
-        hideTyping();
-        if (!data.success) { addBotMessage('Error al subir archivo.'); return; }
-        addBotMessage(formatMsg(data.response));
-        if (data.options && data.options.length > 0) {
-          if (data.options.length === 12) addGradeOptions(data.options);
-          else addOptions(data.options);
-        }
-        if (data.showUpload) addUploadArea();
-        if (data.showSummary) addConfirmButton();
-        if (data.completed) { currentStep = 'completed'; addOptions(['Si, registrar otra', 'No, gracias']); }
-      })
-      .catch(function() {
-        hideTyping();
-        addBotMessage('Error de conexion al subir archivo.');
-      })
-      .finally(function() {
-        setSending(false);
-        inputEl.focus();
-      });
-  }
-
-  sendBtn.addEventListener('click', function() {
-    var text = inputEl.value.trim();
-    if (!text) return;
-    inputEl.value = '';
-    addUserMessage(text);
-    sendMessage(text);
-  });
-
-  inputEl.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendBtn.click(); }
-  });
-
-  attachBtn.addEventListener('click', function() { fileInput.click(); });
-  fileInput.addEventListener('change', function(e) { if (e.target.files[0]) handleFileSelected(e.target.files[0]); fileInput.value = ''; });
-  messagesEl.addEventListener('dragover', function(e) { e.preventDefault(); });
-  messagesEl.addEventListener('drop', function(e) { e.preventDefault(); if (e.dataTransfer.files[0]) handleFileSelected(e.dataTransfer.files[0]); });
-
-  addDateSeparator();
-  sendMessage('');
+(function(){
+'use strict';
+var sid='s-'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
+var sending=false;
+var ME=document.getElementById('msgs'),IN=document.getElementById('ci'),SB=document.getElementById('sb'),AB=document.getElementById('ab'),FL=document.getElementById('fi'),IA=document.getElementById('ia');
+var LG='logo-bethel.jpeg';
+function ts(){return new Date().toLocaleTimeString('es-PY',{hour:'2-digit',minute:'2-digit'})}
+function esc(t){var d=document.createElement('div');d.textContent=t;return d.innerHTML}
+function fmt(t){return t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>').replace(/\n/g,'<br>')}
+function sB(){requestAnimationFrame(function(){ME.scrollTop=ME.scrollHeight})}
+function ss(v){sending=v;SB.disabled=v;IN.disabled=v}
+function st(){var e=document.createElement('div');e.className='msg b';e.id='tp';e.innerHTML='<div class="av bi"><img src="'+LG+'" alt=""></div><div><div class="bb"><div class="ti"><span></span><span></span><span></span></div></div></div>';ME.appendChild(e);sB()}
+function ht(){var e=document.getElementById('tp');if(e)e.remove()}
+function am(t,c){var m=document.createElement('div');m.className='msg '+(t==='b'?'b':'u');var a=t==='b'?'<div class="av bi"><img src="'+LG+'" alt=""></div>':'<div class="av ui">👤</div>';m.innerHTML=a+'<div><div class="bb">'+c+'</div><span class="mt">'+ts()+'</span></div>';ME.appendChild(m);sB();return m}
+function au(t){am('u','<span>'+esc(t)+'</span>')}
+function ab(h){return am('b',h)}
+function ds(){var e=document.createElement('div');e.className='ds';e.innerHTML='<span>'+new Date().toLocaleDateString('es-PY',{weekday:'long',year:'numeric',month:'long',day:'numeric'})+'</span>';ME.appendChild(e)}
+function ao(o){if(!o||!o.length)return;var w=document.createElement('div');w.className='ow';var g=document.createElement('div');g.className='og';for(var i=0;i<o.length;i++){var b=document.createElement('button');b.className='ob';b.textContent=o[i];b.setAttribute('dv',o[i]);b.onclick=function(){so(this.getAttribute('dv'))};g.appendChild(b)}w.appendChild(g);ME.appendChild(w);sB()}
+function ag(o){var w=document.createElement('div');w.className='ow';var g=document.createElement('div');g.className='gg';for(var i=0;i<o.length;i++){var b=document.createElement('button');b.className='gb';b.textContent=o[i];b.setAttribute('di',String(i+1));b.onclick=function(){so(this.getAttribute('di'))};g.appendChild(b)}w.appendChild(g);ME.appendChild(w);sB()}
+function acb(){var w=document.createElement('div');w.className='ow';var b=document.createElement('button');b.className='cf';b.innerHTML='✅ CONFIRMAR REGISTRO';b.onclick=function(){b.disabled=true;b.textContent='Guardando...';b.style.opacity='.7';sm('confirmar')};w.appendChild(b);ME.appendChild(w);sB()}
+function aua(){var a=document.createElement('div');a.className='ua';a.innerHTML='<div class="ic">📤</div><div class="lb">Toque aquí para adjuntar</div><div class="hn">o arrastre su archivo (JPG, PNG, PDF)</div><input type="file" accept="image/*,.pdf" id="ifl">';ME.appendChild(a);sB();var fi=a.querySelector('#ifl');a.onclick=function(){fi.click()};fi.onchange=function(e){if(e.target.files[0])hfs(e.target.files[0])};a.ondragover=function(e){e.preventDefault()};a.ondrop=function(e){e.preventDefault();if(e.dataTransfer.files[0])hfs(e.dataTransfer.files[0])}}
+function hfs(f){var al=['image/jpeg','image/png','image/webp','image/gif','application/pdf'];if(al.indexOf(f.type)===-1){ab('Formato no aceptado. Use JPG, PNG o PDF.');return}if(f.size>10*1024*1024){ab('El archivo excede 10 MB.');return}au('📎 '+f.name);sfs(f)}
+function so(t){var bs=document.querySelectorAll('.ob,.gb');for(var i=0;i<bs.length;i++){bs[i].disabled=true;bs[i].style.opacity='.5'}if(t.indexOf('registrar otra')!==-1||t.indexOf('Si, registrar')!==-1){sid='s-'+Date.now()+'-'+Math.random().toString(36).slice(2,8);sm('');return}if(t.indexOf('No, gracias')!==-1){ab('Gracias por usar nuestro sistema! 🌟<br>Si necesita otra inasistencia, recargue la página.');IA.classList.add('hid');return}au(t);sm(t)}
+function sm(t){if(sending)return;ss(true);st();var b=new FormData();b.append('sessionId',sid);b.append('message',t||'');fetch('/api/chat',{method:'POST',body:b}).then(function(r){return r.json()}).then(function(d){ht();if(!d.success){ab('Error. Intente de nuevo.');return}ab(fmt(d.response));if(d.options&&d.options.length>0){if(d.options.length===12)ag(d.options);else ao(d.options)}if(d.showUpload)aua();if(d.showSummary)acb();if(d.completed){ao(['Si, registrar otra','No, gracias'])}}).catch(function(){ht();ab('Error de conexión.')}).finally(function(){ss(false);IN.focus()})}
+function sfs(f){if(sending)return;ss(true);st();var b=new FormData();b.append('sessionId',sid);b.append('message','');b.append('certificate',f);fetch('/api/chat',{method:'POST',body:b}).then(function(r){return r.json()}).then(function(d){ht();if(!d.success){ab('Error al subir archivo.');return}ab(fmt(d.response));if(d.options&&d.options.length>0){if(d.options.length===12)ag(d.options);else ao(d.options)}if(d.showUpload)aua();if(d.showSummary)acb();if(d.completed){ao(['Si, registrar otra','No, gracias'])}}).catch(function(){ht();ab('Error de conexión.')}).finally(function(){ss(false);IN.focus()})}
+SB.onclick=function(){var t=IN.value.trim();if(!t)return;IN.value='';au(t);sm(t)};
+IN.onkeydown=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();SB.click()}};
+AB.onclick=function(){FL.click()};
+FL.onchange=function(e){if(e.target.files[0])hfs(e.target.files[0]);FL.value=''};
+ME.ondragover=function(e){e.preventDefault()};
+ME.ondrop=function(e){e.preventDefault();if(e.dataTransfer.files[0])hfs(e.dataTransfer.files[0])};
+ds();sm('');
 })();
 </script>
 </body>
